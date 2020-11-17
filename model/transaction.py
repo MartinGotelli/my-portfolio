@@ -1,5 +1,7 @@
 from abc import abstractmethod
 
+from model.measurement import Measurement
+
 
 class Transaction:
     def __init__(self, date, security_quantity, financial_instrument,
@@ -25,15 +27,31 @@ class Transaction:
     def type(self):
         pass
 
+    def movements_on(self, date):
+        return round(-self.commissions - self.gross_payment() + self.security_quantity_if_alive_on(date), 2)
+
+    def security_quantity_if_alive_on(self, date):
+        if self.financial_instrument.is_alive_on(date):
+            return Measurement(self.signed_security_quantity(),
+                               self.financial_instrument)
+        else:
+            return 0
+
+    @staticmethod
+    def gross_payment():
+        return 0
+
 
 class Trade(Transaction):
-    def __init__(self, date, security_quantity, financial_instrument, price, currency, broker):
-        super().__init__(date, security_quantity, financial_instrument, broker)
+    def __init__(self, date, security_quantity, financial_instrument, price, broker, commissions=0):
+        super().__init__(date, security_quantity, financial_instrument, broker, commissions)
         self.price = price
-        self.currency = currency
 
     def gross_payment(self):
-        return self.signed_security_quantity() * self.price
+        return round(self.signed_security_quantity() * self.price, 2)
+
+    def currency(self):
+        return self.price.unit
 
     @abstractmethod
     def transaction_sign(self):

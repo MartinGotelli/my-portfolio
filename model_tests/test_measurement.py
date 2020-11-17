@@ -15,7 +15,7 @@ class MeasurementTests(unittest.TestCase):
         self.assertEqual(ars_200.quantity, 200)
         self.assertEqual(ars_200.unit, ars)
         self.assertEqual(ars_200.value(), ars_200.quantity)
-        self.assertEqual(str(ars_200), "$200")
+        self.assertEqual(str(ars_200), "$ 200")
 
     def test_equals(self):
         another_amount = Measurement(200, ars)
@@ -72,9 +72,10 @@ class MeasurementTests(unittest.TestCase):
 class BagMeasurementTest(unittest.TestCase):
     def test_creation(self):
         self.assertEqual(ars_200_plus_null_100.measurements, [ars_200, null_200])
-        self.assertEqual(str(ars_200_plus_null_100), "Bolsa de:\n$200\n200")
+        self.assertEqual(str(ars_200_plus_null_100), "Bolsa de:\n$ 200\nN/A 200")
 
     def test_add(self):
+        bag_of_20_ars = BagMeasurement([Measurement(20, ars)])
         self.assertEqual(ars_200_plus_null_100 + ars_200,
                          BagMeasurement([Measurement(400, ars), null_200]))
         self.assertEqual(ars_200 + ars_200_plus_null_100,
@@ -87,6 +88,8 @@ class BagMeasurementTest(unittest.TestCase):
         self.assertEqual(ars_200_plus_null_100 + 100, BagMeasurement([ars_200, Measurement(300, NullUnit())]))
         self.assertEqual(ars_200_plus_null_100 + 0, ars_200_plus_null_100)
         self.assertEqual(0 + ars_200_plus_null_100, ars_200_plus_null_100)
+        self.assertEqual(bag_of_20_ars + 0, bag_of_20_ars)
+        self.assertEqual(0 + bag_of_20_ars, bag_of_20_ars)
 
     def test_subtract(self):
         self.assertEqual(ars_200_plus_null_100 - ars_200,

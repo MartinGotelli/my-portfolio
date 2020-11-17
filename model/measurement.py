@@ -30,6 +30,9 @@ class BagMeasurement:
     def __neg__(self):
         return BagMeasurement([-measurement for measurement in self.measurements])
 
+    def __round__(self, n=None):
+        return BagMeasurement([round(measurement, n) for measurement in self.measurements])
+
     def __eq__(self, other):
         return isinstance(other, self.__class__) and set(self.measurements) == set(
             other.measurements)
@@ -41,11 +44,16 @@ class BagMeasurement:
     @staticmethod
     def measurements_from(object):
         if isinstance(object, BagMeasurement):
-            return object.measurements
+            return object.non_zero_measurements()
+        elif float(object) == 0:
+            return []
         elif isinstance(object, Measurement):
             return [object]
         else:
             return [Measurement(object, NullUnit())]
+
+    def non_zero_measurements(self):
+        return [measurement for measurement in self.measurements if measurement.value() != 0]
 
     def measurement_of_if_found_if_none(self, new_measurement, found_method, not_found_method):
         found_measurement = next(
@@ -83,7 +91,7 @@ class BagMeasurement:
 
 class NullUnit:
     def __init__(self):
-        self.code = ""
+        self.code = "N/A"
 
     def __hash__(self):
         return hash(self.code)
@@ -159,7 +167,7 @@ class Measurement:
         return hash((float(self.quantity), self.unit))
 
     def __repr__(self):
-        return self.unit.code + str(self.quantity)
+        return self.unit.code + ' ' + str(self.quantity)
 
     def __int__(self):
         return int(self.value())
@@ -169,6 +177,9 @@ class Measurement:
 
     def __neg__(self):
         return Measurement(-self.value(), self.unit)
+
+    def __round__(self, n=None):
+        return Measurement(round(self.value(), n), self.unit)
 
     def is_same_unit(self, other):
         return (isinstance(other, Measurement) and self.unit == other.unit) or self.unit == NullUnit()

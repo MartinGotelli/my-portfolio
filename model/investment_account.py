@@ -27,6 +27,10 @@ class InvestmentIndividualAccount(InvestmentAccount):
             lambda transaction: transaction.financial_instrument == financial_instrument and transaction.date <= date,
             self.transactions)
 
+    def balances_on(self, date, broker=None):
+        return round(sum([transaction.movements_on(date) for transaction in self.transactions if
+                          (broker is None or transaction.broker == broker) and transaction.date <= date]), 2)
+
 
 class InvestmentPortfolio(InvestmentAccount):
     def __init__(self, description, individual_accounts):
@@ -40,28 +44,5 @@ class InvestmentPortfolio(InvestmentAccount):
     def balance_of_on(self, financial_instrument, date):
         return sum([account.balance_of_on(financial_instrument, date) for account in self.individual_accounts])
 
-    '''
-
-    def add_transaction(self, transaction):
-        if self.balance_of_on(transaction.financial_instrument, transaction.date) + transaction.signed_security_quantity() < 0:
-            raise Exception('Can not sell on short')
-        else:
-            self.transactions.append(transaction)
-
-    def transactions_of_up_to(self, financial_instrument, date):
-        return filter(lambda transaction: transaction.financial_instrument == financial_instrument and transaction.date <= date, self.transactions)
-
-    def balance_of_on(self, financial_instrument, date):
-        return sum(
-            map(lambda transaction: transaction.signed_security_quantity(),
-                self.transactions_of_up_to(financial_instrument, date)))
-
-    def financial_instruments_in_portfolio(self):
-        return without_duplicates(map(lambda transaction: transaction.financial_instrument, self.transactions))
-
-    def purchases_of_on(self, financial_instrument, date):
-        return list(filter(lambda transaction: transaction.signed_security_quantity() >= 0, self.transactions_of_up_to(financial_instrument, date)))
-
-    def balances_on(self, date):
-        return list(map(lambda instrument: Balance(instrument, self.balance_of_on(instrument, date), self.purchases_of_on(instrument, date)), self.financial_instruments_in_portfolio()))
-    '''
+    def balances_on(self, date, broker=None):
+        return round(sum([account.balances_on(date, broker) for account in self.individual_accounts]), 2)
