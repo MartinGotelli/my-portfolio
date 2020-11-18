@@ -2,9 +2,10 @@ from abc import abstractmethod
 
 
 class FinancialInstrument:
-    def __init__(self, code, description):
+    def __init__(self, code, description, price_each_quantity=1):
         self.code = code
         self.description = description
+        self.price_each_quantity = price_each_quantity
 
     def __eq__(self, obj):
         return self.code == obj.code
@@ -34,8 +35,8 @@ class Currency(FinancialInstrument):
 
 
 class Bond(FinancialInstrument):
-    def __init__(self, code, description, maturity_date):
-        super().__init__(code, description)
+    def __init__(self, code, description, maturity_date, price_each_quantity=1):
+        super().__init__(code, description, price_each_quantity)
         self.maturity_date = maturity_date
 
     @staticmethod

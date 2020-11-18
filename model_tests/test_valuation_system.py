@@ -3,8 +3,10 @@ from datetime import date
 
 from model.exceptions import ObjectNotFound
 from model.financial_instrument import Currency, Bond, Stock
+from model.investment_account import InvestmentAccount, InvestmentIndividualAccount
 from model.measurement import Measurement
-from model.valuation_system import ValuationSourceFromDictionary
+from model.transaction import Purchase, Sale
+from model.valuation_system import ValuationSourceFromDictionary, ValuationSystem
 
 ars = Currency('$', 'Pesos')
 usd = Currency('U$D', 'Dólares')
@@ -34,8 +36,7 @@ valuation_source = ValuationSourceFromDictionary({
     }
 })
 
-
-# valuation_system = ValuationSystem(valuation_source)
+valuation_system = ValuationSystem(valuation_source)
 
 
 class TestValuationFromDictionary(unittest.TestCase):
@@ -80,13 +81,24 @@ class TestValuationFromDictionary(unittest.TestCase):
             valuation_source.price_for_on(ay24, ars, after_tomorrow)
 
 
-'''class TestValuationSystem(unittest.TestCase):
+class TestValuationSystem(unittest.TestCase):
     def test_creation(self):
         mock_valuation_system = ValuationSystem("source")
         self.assertEqual(mock_valuation_system.source, "source")
 
-    def test_valuate_on(self):
-'''
+    def test_valuate_instrument_on(self):
+        self.assertEqual(valuation_system.valuate_instrument_on(ay24, ars, today), ars_for(200))
 
-if __name__ == '__main__':
-    unittest.main()
+    def test_valuate_transaction_on(self):
+        purchase = Purchase(today, 2000, ay24, ars_for(180), "IOL")
+        self.assertEqual(valuation_system.valuate_transaction_on(purchase, ars, today), ars_for(200 * 2000))
+
+    def test_valuate_account_on(self):
+        purchase = Purchase(today, 2000, ay24, ars_for(180), "IOL")
+        another_purchase = Purchase(today, 100, ay24, ars_for(185), "IOL")
+        sale = Sale(today, 1200, ay24, ars_for(205), "IOL")
+        account = InvestmentIndividualAccount("Martín")
+        account.add_transaction(purchase)
+        account.add_transaction(another_purchase)
+        account.add_transaction(sale)
+        self.assertEqual(valuation_system.valuate_account_on(account, ars, today), ars_for(200 * (2000 + 100 - 1200)))

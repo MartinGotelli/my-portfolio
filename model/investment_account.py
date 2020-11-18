@@ -31,6 +31,9 @@ class InvestmentIndividualAccount(InvestmentAccount):
         return round(sum([transaction.movements_on(date) for transaction in self.transactions if
                           (broker is None or transaction.broker == broker) and transaction.date <= date]), 2)
 
+    def registered_transactions(self):
+        return self.transactions
+
 
 class InvestmentPortfolio(InvestmentAccount):
     def __init__(self, description, individual_accounts):
@@ -46,3 +49,7 @@ class InvestmentPortfolio(InvestmentAccount):
 
     def balances_on(self, date, broker=None):
         return round(sum([account.balances_on(date, broker) for account in self.individual_accounts]), 2)
+
+    def registered_transactions(self):
+        return [transaction for transactions in [account.registered_transactions() for account in self.individual_accounts] for
+                transaction in transactions]

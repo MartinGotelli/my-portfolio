@@ -1,6 +1,10 @@
 from model import investment_account, financial_instrument, transaction, measurement
+from model.financial_instrument import Stock
+from model.valuation_system import ValuationSystem, ValuationSourceFromIOLAPI
 from persistence import investment_account_persistence_manager
 import datetime
+
+from services.iol_api import IOLAPI
 
 pesos = financial_instrument.Currency('$', 'Pesos')
 dollars = financial_instrument.Currency('U$D', 'Dólares EEUU')
@@ -16,10 +20,10 @@ def usd(amount):
 
 def transactions():
     tb21 = financial_instrument.Bond('TB21', 'BONOS TES NAC EN PESOS BADLAR Privada + 100 pbs.',
-                                     datetime.date(2021, 8, 5))
-    tc20 = financial_instrument.Bond('TC20', 'BONCER 2020', datetime.date(2020, 4, 28))
-    tj20 = financial_instrument.Bond('TJ20', 'BONOS DEL TESORO 2020', datetime.date(2020, 6, 21))
-    to21 = financial_instrument.Bond('T021', 'BONTE 2021', datetime.date(2021, 10, 4))
+                                     datetime.date(2021, 8, 5), 100)
+    tc20 = financial_instrument.Bond('TC20', 'BONCER 2020', datetime.date(2020, 4, 28), 100)
+    tj20 = financial_instrument.Bond('TJ20', 'BONOS DEL TESORO 2020', datetime.date(2020, 6, 21), 100)
+    to21 = financial_instrument.Bond('TO21', 'BONTE 2021', datetime.date(2021, 10, 4), 100)
     rpc4o = financial_instrument.Bond('RPC4O', 'IRSA CLASE IV', datetime.date(2020, 9, 14))
     irc1o = financial_instrument.Bond('IRC1O', 'IRSA 2020 U$S 10%', datetime.date(2020, 11, 16))
     csdoo = financial_instrument.Bond('CSDOO', 'CRESUD SACIF Y A 2023 U$S 6.5%', datetime.date(2023, 2, 16))
@@ -225,8 +229,7 @@ def transactions():
 
 
 if __name__ == '__main__':
-    csdoo = financial_instrument.Bond('CSDOO', 'CRESUD SACIF Y A 2023 U$S 6.5%', datetime.date(2023, 2, 16))
-    today = datetime.date.today()
+    '''csdoo = financial_instrument.Bond('CSDOO', 'CRESUD SACIF Y A 2023 U$S 6.5%', datetime.date(2023, 2, 16))
     transactions()
     portfolio = investment_account_persistence_manager.InvestmentAccountPersistenceManager().retrieve()[0]
     #print(portfolio.balance_of_on(csdoo, today))
@@ -236,11 +239,16 @@ if __name__ == '__main__':
     print("")
     print("Posición en Balanz")
     print(portfolio.balances_on(today, "BALANZ"))
-    #print(portfolio.individual_accounts[1].balances_on(today, "IOL"))
-
-    #print(portfolio.individual_accounts[2].balances_on(today, "IOL"))
-    print("")
-    #print(portfolio.individual_accounts[2].balances_on(today))
-    # print(portfolio.individual_accounts[0].transactions[0])
-    # print(portfolio.individual_accounts[0].transactions[0].movements())
-    # print(portfolio.individual_accounts[0].transactions[0].movements_in("BALANZ"))
+    '''
+    #transactions()
+    today = datetime.date.today()
+    portfolio = investment_account_persistence_manager.InvestmentAccountPersistenceManager().retrieve()[0]
+    valuation_system = ValuationSystem(ValuationSourceFromIOLAPI())
+    #print(valuation_system.valuate_account_on(portfolio.individual_accounts[2], pesos, today, "IOL"))
+    # print(portfolio.individual_accounts[2].transactions[0])
+    # print(valuation_system.valuate_transaction_on(portfolio.individual_accounts[2].transactions[0], pesos, today))
+    print("Ingrese contraseña para IOL")
+    password = input()
+    IOLAPI().set_user_and_password("mgotelli", password)
+    print(valuation_system.valuate_account_on(portfolio, pesos, today, "IOL"))
+    print(IOLAPI().requests_count)

@@ -29,10 +29,11 @@ class CurrencyTests(unittest.TestCase):
 
 class BondTests(unittest.TestCase):
     def test_creation(self):
-        ay24 = financial_instrument.Bond("AY24", "Bonar 2024", today)
+        ay24 = financial_instrument.Bond("AY24", "Bonar 2024", today, 100)
         self.assertEqual(ay24.code, "AY24")
         self.assertEqual(ay24.description, "Bonar 2024")
         self.assertEqual(ay24.maturity_date, today)
+        self.assertEqual(ay24.price_each_quantity, 100)
 
     def test_equals(self):
         ay24 = financial_instrument.Bond("AY24", "Bonar 2024", today)
