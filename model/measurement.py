@@ -1,5 +1,4 @@
 from copy import deepcopy
-import collections
 from numbers import Number
 
 
@@ -86,7 +85,7 @@ class BagMeasurement:
     @staticmethod
     def assert_same_unit(measurement, other_measurement):
         if measurement.unit != other_measurement.unit:
-            raise Exception("There are not the same units")
+            raise InvalidMathematicalOperation("There are not the same units")
 
 
 class NullUnit:
@@ -185,7 +184,11 @@ class Measurement:
         return (isinstance(other, Measurement) and self.unit == other.unit) or self.unit == NullUnit()
 
     def not_supported_operation(self, operation):
-        raise Exception(operation + ' is not supported for this units')
+        raise InvalidMathematicalOperation(operation + ' is not supported for this units')
 
     def value(self):
         return self.quantity
+
+
+class InvalidMathematicalOperation(Exception):
+    pass
