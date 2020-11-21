@@ -50,3 +50,7 @@ class Stock(FinancialInstrument):
     def is_currency(): return False
 
     def is_alive_on(self, date): return True
+
+
+ars = Currency("$", "Pesos")
+usd = Currency("USD", "Dólares")

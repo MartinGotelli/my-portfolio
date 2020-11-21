@@ -25,12 +25,15 @@ class ValuationSourceFromDictionary:
             pass
 
     def price_for_on(self, instrument, currency, date):
+        if instrument == currency:
+            return Measurement(1, currency)
+
         try:
             return next(filter(lambda price: price.unit == currency,
                                self.prices_for_on(instrument, date)))
         except StopIteration:
             raise ObjectNotFound(
-                "There is no " + currency.description + "price for " + instrument.code + " on " + str(date))
+                "There is no " + currency.description + " price for " + instrument.code + " on " + str(date))
 
 
 class ValuationSourceFromIOLAPI:
@@ -46,7 +49,7 @@ class ValuationSourceFromIOLAPI:
             return self.instruments_api
 
     def price_for_on(self, instrument, currency, date):
-        #TODO: if instrument == currency:
+        # TODO: if instrument == currency:
         if instrument.is_currency():
             return Measurement(1, instrument)
         else:
@@ -71,7 +74,7 @@ class ValuationSystem:
     def __init__(self, source):
         self.source = source
 
-    def valuate_account_on(self, account, currency, date, broker="None"):
+    def valuate_account_on(self, account, currency, date, broker=None):
         return sum(
             [self.valuate_instrument_on(balance.unit, currency, date) * float(balance) for balance in
              account.balances_on(date, broker).measurements])

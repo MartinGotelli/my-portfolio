@@ -2,6 +2,25 @@ from copy import deepcopy
 from numbers import Number
 
 
+def as_measurement(number):
+    if isinstance(number, Measurement) or isinstance(number, BagMeasurement):
+        return number
+    else:
+        return Measurement(number, NullUnit())
+
+
+def is_same_unit(measurement, another):
+    return ((isinstance(another, Measurement) and measurement.unit == another.unit) or (
+            isinstance(another, Number) and measurement.unit == NullUnit()))
+
+
+def is_same_unit_or_fail(measurement, another):
+    if is_same_unit(measurement, another):
+        return True
+    else:
+        raise InvalidMathematicalOperation("Opearion unsupported, there are different units")
+
+
 class BagMeasurement:
     def __init__(self, measurements=[]):
         self.measurements = [measurement for measurement in measurements if measurement.value() != 0]
@@ -109,7 +128,9 @@ class Measurement:
             return other + self
         elif float(other) == 0:
             return self
-        elif not self.is_same_unit(other):
+        elif self.value() == 0:
+            return as_measurement(other)
+        elif not is_same_unit(self, other):
             return BagMeasurement([self]) + other
         else:
             return Measurement(self.value() + float(other), self.unit)
@@ -122,7 +143,7 @@ class Measurement:
             return -other + self
         elif float(other) == 0:
             return self
-        elif not self.is_same_unit(other):
+        elif not is_same_unit(self, other):
             return BagMeasurement([self]) - other
         else:
             return Measurement(self.value() - float(other), self.unit)
@@ -158,9 +179,20 @@ class Measurement:
         else:
             self.not_supported_operation('Division')
 
+    def __lt__(self, other):
+        return is_same_unit_or_fail(self, other) and float(self) < float(other)
+
+    def __le__(self, other):
+        return self == other or self < other
+
+    def __gt__(self, other):
+        return is_same_unit_or_fail(self, other) and float(self) > float(other)
+
+    def __ge__(self, other):
+        return self == other or self > other
+
     def __eq__(self, other):
-        return isinstance(other, Measurement) and float(self.quantity) == float(
-            other.quantity) and self.unit == other.unit
+        return is_same_unit(self, other) and float(self) == float(other)
 
     def __hash__(self):
         return hash((float(self.quantity), self.unit))
@@ -179,9 +211,6 @@ class Measurement:
 
     def __round__(self, n=None):
         return Measurement(round(self.value(), n), self.unit)
-
-    def is_same_unit(self, other):
-        return (isinstance(other, Measurement) and self.unit == other.unit) or self.unit == NullUnit()
 
     def not_supported_operation(self, operation):
         raise InvalidMathematicalOperation(operation + ' is not supported for this units')

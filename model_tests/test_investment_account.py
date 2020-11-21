@@ -2,7 +2,7 @@ import unittest
 from model import investment_account, financial_instrument, transaction
 import datetime
 
-from model.measurement import BagMeasurement, Measurement
+from model.measurement import BagMeasurement, Measurement, NullUnit
 
 euro = financial_instrument.Currency('EUR', 'Euro')
 one_euro = Measurement(1, euro)
@@ -117,6 +117,20 @@ class TestInvestmentIndividualAccount(unittest.TestCase):
         self.assertEqual(account.balances_on(today, "BALANZ"),
                          Measurement(1500 - 800, ay24) + Measurement(-1500 + 800 - 0.25 - 0.2, euro))
 
+    def test_balances_on_by_broker_without_transactions(self):
+        account = investment_account.InvestmentIndividualAccount("Martín")
+        self.assertEqual(account.balances_on(today, "VIOL"), Measurement(0, NullUnit()))
+
+    def test_registered_transactions(self):
+        iol_purchase = transaction.Purchase(today, 5000, ay24, one_euro, "IOL")
+        balanz_purchase = transaction.Purchase(today, 5000, ay24, one_euro, "BALANZ")
+        account = investment_account.InvestmentIndividualAccount("Martín")
+        account.add_transaction(iol_purchase)
+        account.add_transaction(balanz_purchase)
+        self.assertEqual(account.registered_transactions(), account.transactions)
+        self.assertEqual(account.registered_transactions("IOL"), [iol_purchase])
+        self.assertEqual(account.registered_transactions("BALANZ"), [balanz_purchase])
+
 
 class TestInvestmentPortfolio(unittest.TestCase):
 
@@ -221,6 +235,19 @@ class TestInvestmentPortfolio(unittest.TestCase):
                          Measurement(5000 * 2 - 300, ay24) + Measurement(-5000 * 2 + 300 - 0.75 * 2 - 0.1, euro))
         self.assertEqual(portfolio.balances_on(today, "BALANZ"),
                          Measurement(1500 - 800 * 2, ay24) + Measurement(-1500 + 800 * 2 - 0.25 - 0.2 * 2, euro))
+
+    def test_registered_transactions(self):
+        iol_purchase = transaction.Purchase(today, 5000, ay24, one_euro, "IOL")
+        balanz_purchase = transaction.Purchase(today, 5000, ay24, one_euro, "BALANZ")
+        account = investment_account.InvestmentIndividualAccount("Martín")
+        another_account = investment_account.InvestmentIndividualAccount("Pablo")
+        account.add_transaction(iol_purchase)
+        account.add_transaction(balanz_purchase)
+        another_account.add_transaction(balanz_purchase)
+        portfolio = investment_account.InvestmentPortfolio("Martín Portfolio", [account, another_account])
+        self.assertEqual(portfolio.registered_transactions(), account.transactions + another_account.transactions)
+        self.assertEqual(portfolio.registered_transactions("IOL"), [iol_purchase])
+        self.assertEqual(portfolio.registered_transactions("BALANZ"), [balanz_purchase, balanz_purchase])
 
 
 if __name__ == '__main__':

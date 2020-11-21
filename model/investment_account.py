@@ -1,3 +1,6 @@
+from model.measurement import NullUnit, Measurement
+
+
 class InvestmentAccount:
     def __init__(self, description):
         self.description = description
@@ -28,11 +31,13 @@ class InvestmentIndividualAccount(InvestmentAccount):
             self.transactions)
 
     def balances_on(self, date, broker=None):
-        return round(sum([transaction.movements_on(date) for transaction in self.transactions if
-                          (broker is None or transaction.broker == broker) and transaction.date <= date]), 2)
+        return round(Measurement(0, NullUnit()) +
+                     (sum([transaction.movements_on(date) for transaction in self.transactions if
+                           (broker is None or transaction.broker == broker) and
+                           transaction.date <= date])), 2)
 
-    def registered_transactions(self):
-        return self.transactions
+    def registered_transactions(self, broker=None):
+        return [transaction for transaction in self.transactions if broker is None or transaction.broker == broker]
 
 
 class InvestmentPortfolio(InvestmentAccount):
@@ -50,6 +55,7 @@ class InvestmentPortfolio(InvestmentAccount):
     def balances_on(self, date, broker=None):
         return round(sum([account.balances_on(date, broker) for account in self.individual_accounts]), 2)
 
-    def registered_transactions(self):
-        return [transaction for transactions in [account.registered_transactions() for account in self.individual_accounts] for
+    def registered_transactions(self, broker=None):
+        return [transaction for transactions in
+                [account.registered_transactions(broker) for account in self.individual_accounts] for
                 transaction in transactions]

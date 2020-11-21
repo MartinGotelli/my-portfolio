@@ -1,5 +1,6 @@
 from abc import abstractmethod
 
+from model.financial_instrument import ars
 from model.measurement import Measurement
 
 
@@ -11,6 +12,7 @@ class Transaction:
         self.financial_instrument = financial_instrument
         self.broker = broker
         self.commissions = commissions
+        self.price = Measurement(0, ars)
 
     def __repr__(self):
         return '(' + str(self.date) + ') ' + self.type() + ' de ' + str(self.security_quantity) \

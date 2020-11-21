@@ -1,5 +1,6 @@
 from model import investment_account, financial_instrument, transaction, measurement
 from model.financial_instrument import Stock
+from model.stock_system import StockSystem
 from model.valuation_system import ValuationSystem, ValuationSourceFromIOLAPI
 from persistence import investment_account_persistence_manager
 import datetime
@@ -18,26 +19,27 @@ def usd(amount):
     return measurement.Measurement(amount, dollars)
 
 
-def transactions():
-    tb21 = financial_instrument.Bond('TB21', 'BONOS TES NAC EN PESOS BADLAR Privada + 100 pbs.',
-                                     datetime.date(2021, 8, 5), 100)
-    tc20 = financial_instrument.Bond('TC20', 'BONCER 2020', datetime.date(2020, 4, 28), 100)
-    tj20 = financial_instrument.Bond('TJ20', 'BONOS DEL TESORO 2020', datetime.date(2020, 6, 21), 100)
-    to21 = financial_instrument.Bond('TO21', 'BONTE 2021', datetime.date(2021, 10, 4), 100)
-    rpc4o = financial_instrument.Bond('RPC4O', 'IRSA CLASE IV', datetime.date(2020, 9, 14))
-    irc1o = financial_instrument.Bond('IRC1O', 'IRSA 2020 U$S 10%', datetime.date(2020, 11, 16))
-    csdoo = financial_instrument.Bond('CSDOO', 'CRESUD SACIF Y A 2023 U$S 6.5%', datetime.date(2023, 2, 16))
-    irc9o = financial_instrument.Bond('IRC9O', 'IRSA CLASE IX', datetime.date(2023, 3, 1))
-    mirg = financial_instrument.Stock("MIRG", "MIRGOR")
-    bma = financial_instrument.Stock("BMA", "BANCO MACRO")
-    tgno4 = financial_instrument.Stock("TGNO4", "TRANSPORTADORA GAS DEL NORTE")
-    abev = financial_instrument.Stock("ABEV", "AMBEV")
-    ogzd = financial_instrument.Stock("OGZD", "GAZPROM")
-    arco = financial_instrument.Stock("ARCO", "ARCOS DORADOS")
-    vist = financial_instrument.Stock("VIST", "VISTA OIL")
-    ko = financial_instrument.Stock("KO", "COCA COLA")
-    meli = financial_instrument.Stock("MELI", "MERCADO LIBRE")
+tb21 = financial_instrument.Bond('TB21', 'BONOS TES NAC EN PESOS BADLAR Privada + 100 pbs.',
+                                 datetime.date(2021, 8, 5), 100)
+tc20 = financial_instrument.Bond('TC20', 'BONCER 2020', datetime.date(2020, 4, 28), 100)
+tj20 = financial_instrument.Bond('TJ20', 'BONOS DEL TESORO 2020', datetime.date(2020, 6, 21), 100)
+to21 = financial_instrument.Bond('TO21', 'BONTE 2021', datetime.date(2021, 10, 4), 100)
+rpc4o = financial_instrument.Bond('RPC4O', 'IRSA CLASE IV', datetime.date(2020, 9, 14))
+irc1o = financial_instrument.Bond('IRC1O', 'IRSA 2020 U$S 10%', datetime.date(2020, 11, 16))
+csdoo = financial_instrument.Bond('CSDOO', 'CRESUD SACIF Y A 2023 U$S 6.5%', datetime.date(2023, 2, 16))
+irc9o = financial_instrument.Bond('IRC9O', 'IRSA CLASE IX', datetime.date(2023, 3, 1))
+mirg = financial_instrument.Stock("MIRG", "MIRGOR")
+bma = financial_instrument.Stock("BMA", "BANCO MACRO")
+tgno4 = financial_instrument.Stock("TGNO4", "TRANSPORTADORA GAS DEL NORTE")
+abev = financial_instrument.Stock("ABEV", "AMBEV")
+ogzd = financial_instrument.Stock("OGZD", "GAZPROM")
+arco = financial_instrument.Stock("ARCO", "ARCOS DORADOS")
+vist = financial_instrument.Stock("VIST", "VISTA OIL")
+ko = financial_instrument.Stock("KO", "COCA COLA")
+meli = financial_instrument.Stock("MELI", "MERCADO LIBRE")
 
+
+def transactions():
     martin = investment_account.InvestmentIndividualAccount("Martín")
     pablo = investment_account.InvestmentIndividualAccount("Pablo")
     andres = investment_account.InvestmentIndividualAccount("Andrés")
@@ -96,8 +98,8 @@ def transactions():
     t50 = transaction.Purchase(datetime.date(2020, 10, 30), 432, csdoo, ars(115), "BALANZ", ars(298.58))
     t51 = transaction.Purchase(datetime.date(2020, 11, 2), 8, meli, ars(3100), "IOL", ars(174.05))
     t52 = transaction.Purchase(datetime.date(2020, 11, 10), 3, meli, ars(3130), "IOL", ars(65.90))
-    t53 = transaction.CouponClipping(datetime.date(2020, 11, 16), 7.45, dollars, irc9o, "BALANZ", ars(2.23))
-    t54 = transaction.CouponClipping(datetime.date(2020, 11, 16), 487.16, pesos, irc9o, "BALANZ", ars(0))
+    t53 = transaction.CouponClipping(datetime.date(2020, 11, 16), 7.45 - 1.54, dollars, irc9o, "BALANZ", ars(2.23))
+    t54 = transaction.CouponClipping(datetime.date(2020, 11, 16), 487.16 - 26.52, pesos, irc9o, "BALANZ", ars(0))
 
     d1 = transaction.Inflow(datetime.date(2020, 5, 5), 10000, pesos, "BALANZ")
     d2 = transaction.Inflow(datetime.date(2020, 5, 7), 70000, pesos, "BALANZ")
@@ -229,26 +231,26 @@ def transactions():
 
 
 if __name__ == '__main__':
-    '''csdoo = financial_instrument.Bond('CSDOO', 'CRESUD SACIF Y A 2023 U$S 6.5%', datetime.date(2023, 2, 16))
-    transactions()
-    portfolio = investment_account_persistence_manager.InvestmentAccountPersistenceManager().retrieve()[0]
-    #print(portfolio.balance_of_on(csdoo, today))
-    #print(portfolio.individual_accounts[0].balances_on(today, "IOL"))
-    print("Posición en IOL")
-    print(portfolio.balances_on(today, "IOL"))
-    print("")
-    print("Posición en Balanz")
-    print(portfolio.balances_on(today, "BALANZ"))
-    '''
-    #transactions()
+    # transactions()
     today = datetime.date.today()
     portfolio = investment_account_persistence_manager.InvestmentAccountPersistenceManager().retrieve()[0]
-    valuation_system = ValuationSystem(ValuationSourceFromIOLAPI())
-    #print(valuation_system.valuate_account_on(portfolio.individual_accounts[2], pesos, today, "IOL"))
+    # valuation_system = ValuationSystem(ValuationSourceFromIOLAPI())
+    # print(valuation_system.valuate_account_on(portfolio.individual_accounts[2], pesos, today, "IOL"))
     # print(portfolio.individual_accounts[2].transactions[0])
     # print(valuation_system.valuate_transaction_on(portfolio.individual_accounts[2].transactions[0], pesos, today))
-    print("Ingrese contraseña para IOL")
-    password = input()
-    IOLAPI().set_user_and_password("mgotelli", password)
-    print(valuation_system.valuate_account_on(portfolio, pesos, today, "IOL"))
-    print(IOLAPI().requests_count)
+    # print("Ingrese contraseña para IOL")
+    # password = input()
+    # IOLAPI().set_user_and_password("mgotelli", password)
+    # print(valuation_system.valuate_account_on(portfolio, pesos, today, "IOL"))
+    # print(IOLAPI().requests_count)
+    stock_system = StockSystem(portfolio.registered_transactions("IOL"))
+    #print(stock_system.average_price_for_on(abev, today))
+    #print(stock_system.average_price_for_on(arco, today))
+    print(stock_system.average_price_for_on(bma, today))
+    #print(stock_system.average_price_for_on(ko, today))
+    #print(stock_system.average_price_for_on(meli, today))
+    #print(stock_system.average_price_for_on(ogzd, today))
+    #print(stock_system.average_price_for_on(tgno4, today))
+    #print(stock_system.average_price_for_on(to21, today))
+    #print(stock_system.average_price_for_on(vist, today))
+
