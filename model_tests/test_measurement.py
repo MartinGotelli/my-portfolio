@@ -23,6 +23,8 @@ class MeasurementTests(unittest.TestCase):
         self.assertEqual(200, null_200)
         self.assertEqual(null_200, 200)
         self.assertNotEqual(null_200, ars_200)
+        self.assertEqual(0, Measurement(0, ars))
+        self.assertEqual(Measurement(0, ars), 0)
 
     def test_add(self):
         another_amount = Measurement(200, ars)

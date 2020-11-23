@@ -2,6 +2,7 @@ import unittest
 from model import financial_instrument, transaction
 import datetime
 
+from model.financial_instrument import ars
 from model.measurement import Measurement
 
 euro = financial_instrument.Currency('EUR', 'Euro')
@@ -28,6 +29,7 @@ def assert_security_quantity_if_alive_on_for_using(transaction, test_case):
 
     test_case.assertEqual(transaction.security_quantity_if_alive_on(after_tomorrow),
                           security_quantity)
+
 
 class TestPurchase(unittest.TestCase):
     purchase = transaction.Purchase(today, 2000, ay24, Measurement(0.81, euro), "IOL")
@@ -86,6 +88,7 @@ class TestSale(unittest.TestCase):
     def test_movements_on(self):
         assert_movements_for_using(self.sale, self)
 
+
 class TestInflow(unittest.TestCase):
     inflow = transaction.Inflow(today, 2000, ay24, "IOL")
 
@@ -96,6 +99,8 @@ class TestInflow(unittest.TestCase):
         self.assertEqual(self.inflow.broker, "IOL")
         self.assertEqual(self.inflow.commissions, 0)
         self.assertEqual(self.inflow.type(), "Ingreso")
+        self.assertEqual(self.inflow.price, 0)
+        self.assertEqual(self.inflow.price.unit, ars)
 
     def test_signed_quantity(self):
         self.assertEqual(self.inflow.signed_security_quantity(), 2000)
@@ -117,6 +122,8 @@ class TestOutflow(unittest.TestCase):
         self.assertEqual(self.outflow.broker, "IOL")
         self.assertEqual(self.outflow.commissions, 0)
         self.assertEqual(self.outflow.type(), "Egreso")
+        self.assertEqual(self.outflow.price, 0)
+        self.assertEqual(self.outflow.price.unit, ars)
 
     def test_signed_quantity(self):
         self.assertEqual(self.outflow.signed_security_quantity(), 2000 * -1)
@@ -126,6 +133,7 @@ class TestOutflow(unittest.TestCase):
 
     def test_movements_on(self):
         assert_movements_for_using(self.outflow, self)
+
 
 class TestCouponClipping(unittest.TestCase):
     coupon_clipping = transaction.CouponClipping(today, 2000, euro, ay24, "IOL")
@@ -148,6 +156,9 @@ class TestCouponClipping(unittest.TestCase):
     def test_movements_on(self):
         assert_movements_for_using(self.coupon_clipping, self)
 
+    def test_gross_payment(self):
+        self.assertEqual(self.coupon_clipping.gross_payment(), Measurement(2000, euro))
+
 
 class TestStockDividend(unittest.TestCase):
     stock_dividend = transaction.StockDividend(today, 2000, euro, ay24, "IOL")
@@ -169,6 +180,9 @@ class TestStockDividend(unittest.TestCase):
 
     def test_movements_on(self):
         assert_movements_for_using(self.stock_dividend, self)
+
+    def test_gross_payment(self):
+        self.assertEqual(self.stock_dividend.gross_payment(), Measurement(2000, euro))
 
 
 if __name__ == '__main__':

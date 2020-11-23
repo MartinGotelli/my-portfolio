@@ -43,6 +43,10 @@ class Transaction:
     def gross_payment():
         return 0
 
+    @staticmethod
+    def is_payment():
+        return False
+
 
 class Trade(Transaction):
     def __init__(self, date, security_quantity, financial_instrument, price, broker, commissions=0):
@@ -104,6 +108,13 @@ class FinancialInstrumentTenderingPayment(Inflow):
 
     @abstractmethod
     def type(self): pass
+
+    @staticmethod
+    def is_payment():
+        return True
+
+    def gross_payment(self):
+        return Measurement(self.signed_security_quantity(), self.financial_instrument)
 
 
 class CouponClipping(FinancialInstrumentTenderingPayment):

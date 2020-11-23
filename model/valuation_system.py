@@ -53,21 +53,24 @@ class ValuationSourceFromIOLAPI:
         if instrument.is_currency():
             return Measurement(1, instrument)
         else:
-            try:
-                return self.source.price_for_on(instrument, currency, date)
-            except ObjectNotFound:
-                if date == datetime.date.today():
-                    try:
-                        price = Measurement(self.api_for(instrument).price_for(instrument), currency)
-                        self.source.add_price_for_on(instrument, date, price)
-                        return price
-                    except Exception as exception:
-                        # TODO: Hacer bien
-                        print(exception)
-                        return 0
-                else:
-                    raise ObjectNotFound(
-                        "There is no " + currency.description + "price for " + instrument.code + " on " + str(date))
+            if not instrument.is_alive_on(date):
+                return 0
+            else:
+                try:
+                    return self.source.price_for_on(instrument, currency, date)
+                except ObjectNotFound:
+                    if date == datetime.date.today():
+                        try:
+                            price = Measurement(self.api_for(instrument).price_for(instrument), currency)
+                            self.source.add_price_for_on(instrument, date, price)
+                            return price
+                        except Exception as exception:
+                            # TODO: Hacer bien
+                            print(exception)
+                            return 0
+                    else:
+                        raise ObjectNotFound(
+                            "There is no " + currency.description + "price for " + instrument.code + " on " + str(date))
 
 
 class ValuationSystem:

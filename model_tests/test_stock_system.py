@@ -5,26 +5,43 @@ from model.exceptions import InstanceCreationFailed
 from model.financial_instrument import Bond, Currency, Stock
 from model.measurement import Measurement
 from model.stock_system import OpenPosition, ClosingPosition, OpenPositionCreator, StockSystem
-from model.transaction import Purchase, Inflow, Sale
+from model.transaction import Purchase, Inflow, Sale, CouponClipping, StockDividend
+from model.valuation_system import ValuationSystem, ValuationSourceFromDictionary
 
 euro = Currency('EUR', 'Euro')
 one_euro = Measurement(1, euro)
+yesterday = datetime.date(2020, 2, 1)
 today = datetime.date(2020, 2, 2)
 tomorrow = datetime.date(2020, 2, 3)
 after_tomorrow = datetime.date(2020, 2, 4)
 ay24 = Bond('AY24', 'Bonar 2024', tomorrow)
-purchase = Purchase(today, 2000, ay24, Measurement(0.81, euro), "IOL")
-purchase_1200 = Purchase(today, 1200, ay24, Measurement(0.81, euro), "IOL")
-purchase_10000 = Purchase(tomorrow, 10000, ay24, 0.78 * one_euro, "IOL")
-today_sale = sale = Sale(today, 500, ay24, Measurement(0.83, euro), "IOL")
-sale = Sale(tomorrow, 500, ay24, Measurement(0.83, euro), "IOL")
-sale_2000 = Sale(tomorrow, 2000, ay24, Measurement(0.83, euro), "IOL")
+purchase = Purchase(today, 2000, ay24, Measurement(0.81, euro), "IOL", 10 * one_euro)
+purchase_1200 = Purchase(today, 1200, ay24, Measurement(0.81, euro), "IOL", 8 * one_euro)
+purchase_10000 = Purchase(tomorrow, 10000, ay24, 0.78 * one_euro, "IOL", 100 * one_euro)
+today_sale = Sale(today, 500, ay24, Measurement(0.825, euro), "IOL", 3.5 * one_euro)
+sale = Sale(tomorrow, 500, ay24, Measurement(0.83, euro), "IOL", 4 * one_euro)
+sale_2000 = Sale(tomorrow, 2000, ay24, Measurement(0.84, euro), "IOL", 7.5 * one_euro)
 deposit_1000 = Inflow(today, 1000, euro, "IOL")
+coupon_clipping = CouponClipping(tomorrow, 550, euro, ay24, "IOL", 20 * one_euro)
 closing_position_500 = ClosingPosition(sale)
 closing_position_200 = ClosingPosition(sale, 200)
 closing_position_2000 = ClosingPosition(sale_2000)
 open_position_1500 = OpenPosition(purchase, [closing_position_500])
 meli = Stock("MELI", "MERCADOLIBRE")
+
+valuation_source = ValuationSourceFromDictionary({
+    today: {
+        ay24: [0.82 * one_euro],
+    },
+    tomorrow: {
+        ay24: [0.85 * one_euro]
+    },
+    after_tomorrow: {
+        ay24: [0.90 * one_euro]
+    }
+})
+
+valuation_system = ValuationSystem(valuation_source)
 
 
 class TestClosingPosition(unittest.TestCase):
@@ -33,11 +50,13 @@ class TestClosingPosition(unittest.TestCase):
         self.assertEqual(closing_position.outflow, sale)
         self.assertEqual(closing_position.security_quantity, 200)
         self.assertEqual(closing_position.date(), sale.date)
+        self.assertEqual(closing_position.price(), sale.price)
         self.assertEqual(str(closing_position), "Imputación de AY24 - 200")
         closing_position = ClosingPosition(sale)
         self.assertEqual(closing_position.outflow, sale)
         self.assertEqual(closing_position.security_quantity, 500)
         self.assertEqual(closing_position.date(), sale.date)
+        self.assertEqual(closing_position.price(), sale.price)
         self.assertEqual(str(closing_position), "Imputación de AY24 - 500")
 
     def test_security_quantity_exceeds_sale_quantity(self):
@@ -49,9 +68,32 @@ class TestClosingPosition(unittest.TestCase):
             ClosingPosition(sale, 1000)
 
     def test_quantity_on(self):
-        self.assertEqual(closing_position_500.quantity_on(sale.date), Measurement(500, ay24))
-        self.assertEqual(closing_position_500.quantity_on(sale.date), closing_position_500.quantity())
-        self.assertEqual(closing_position_500.quantity_on(today), 0)
+        ay24_200 = Measurement(200, ay24)
+        ay24_500 = Measurement(500, ay24)
+        self.assertEqual(closing_position_200.quantity_on(sale.date), ay24_200)
+        self.assertEqual(closing_position_200.quantity_on(sale.date), closing_position_200.quantity())
+        self.assertEqual(closing_position_200.quantity_on(today), 0)
+        # AY24 not alive after tomorrow
+        self.assertEqual(closing_position_200.quantity_on(after_tomorrow), ay24_200)
+        closing_position = ClosingPosition(today_sale)
+        self.assertEqual(closing_position.quantity_on(today), ay24_500)
+        self.assertEqual(closing_position.quantity_on(tomorrow), ay24_500)
+        # AY24 not alive after tomorrow
+        self.assertEqual(closing_position.quantity_on(after_tomorrow), ay24_500)
+
+    def test_alive_quantity_on(self):
+        ay24_200 = Measurement(200, ay24)
+        ay24_500 = Measurement(500, ay24)
+        self.assertEqual(closing_position_200.alive_quantity_on(sale.date), ay24_200)
+        self.assertEqual(closing_position_200.alive_quantity_on(sale.date), closing_position_200.quantity())
+        self.assertEqual(closing_position_200.alive_quantity_on(today), 0)
+        # AY24 not alive after tomorrow
+        self.assertEqual(closing_position_200.alive_quantity_on(after_tomorrow), 0)
+        closing_position = ClosingPosition(today_sale)
+        self.assertEqual(closing_position.alive_quantity_on(today), ay24_500)
+        self.assertEqual(closing_position.alive_quantity_on(tomorrow), ay24_500)
+        # AY24 not alive after tomorrow
+        self.assertEqual(closing_position.alive_quantity_on(after_tomorrow), 0)
 
 
 class TestOpenPosition(unittest.TestCase):
@@ -85,6 +127,12 @@ class TestOpenPosition(unittest.TestCase):
         self.assertEqual(open_position_1500.balance_on(today), Measurement(2000, ay24))
         self.assertEqual(open_position_1500.balance_on(tomorrow), Measurement(1500, ay24))
         self.assertEqual(open_position_1500.balance_on(after_tomorrow), 0)
+
+    def test_quantity_on(self):
+        self.assertEqual(open_position_1500.quantity_on(yesterday), 0)
+        self.assertEqual(open_position_1500.quantity_on(today), Measurement(2000, ay24))
+        self.assertEqual(open_position_1500.quantity_on(tomorrow), Measurement(1500, ay24))
+        self.assertEqual(open_position_1500.quantity_on(after_tomorrow), Measurement(1500, ay24))
 
 
 class TestOpenPositionCreator(unittest.TestCase):
@@ -163,3 +211,174 @@ class TestStockSystem(unittest.TestCase):
         self.assertEqual(
             stock_system.average_price_for_on(ay24, tomorrow),
             round(((2000 - 500) * 0.81 + 10000 * 0.78) / (12000 - 500) * one_euro, 8))
+
+    def test_sales_result_for_on(self):
+        stock_system = StockSystem([purchase, sale])
+        self.assertEqual(stock_system.open_positions[ay24], [open_position_1500])
+        self.assertEqual(stock_system.sales_result_for_on(ay24, today), 0)
+        self.assertEqual(stock_system.sales_result_for_on(ay24, sale.date),
+                         (0.83 - 0.81) * sale.security_quantity * one_euro)
+        # AY24 is not alive anymore
+        self.assertEqual(stock_system.sales_result_for_on(ay24, after_tomorrow),
+                         (0.83 - 0.81) * sale.security_quantity * one_euro)
+
+    def test_sales_result_for_on_without_outflows(self):
+        stock_system = StockSystem([purchase])
+        self.assertEqual(stock_system.open_positions[ay24], [OpenPosition(purchase)])
+        self.assertEqual(stock_system.sales_result_for_on(ay24, tomorrow), 0)
+
+    def test_sales_result_for_multiple_open_positions(self):
+        stock_system = StockSystem([purchase, sale_2000, purchase, sale])
+        self.assertEqual(stock_system.open_positions[ay24],
+                         [OpenPosition(purchase, [closing_position_2000]), open_position_1500])
+        self.assertEqual(stock_system.sales_result_for_on(ay24, today), 0)
+        self.assertEqual(stock_system.sales_result_for_on(ay24, sale.date),
+                         ((0.84 - 0.81) * sale_2000.security_quantity + (
+                                 0.83 - 0.81) * sale.security_quantity) * one_euro)
+        # AY24 is not alive anymore
+        self.assertEqual(stock_system.sales_result_for_on(ay24, after_tomorrow),
+                         ((0.84 - 0.81) * sale_2000.security_quantity + (
+                                 0.83 - 0.81) * sale.security_quantity) * one_euro)
+
+    def test_sales_result_for_multiple_closing_positions(self):
+        stock_system = StockSystem([purchase, today_sale, sale])
+        self.assertEqual(stock_system.open_positions[ay24],
+                         [OpenPosition(purchase, [ClosingPosition(today_sale), closing_position_500])])
+        self.assertEqual(stock_system.sales_result_for_on(ay24, today),
+                         (0.825 - 0.81) * today_sale.security_quantity * one_euro)
+        self.assertEqual(stock_system.sales_result_for_on(ay24, sale.date),
+                         ((0.825 - 0.81) * today_sale.security_quantity + (
+                                 0.83 - 0.81) * sale.security_quantity) * one_euro)
+        # AY24 is not alive anymore
+        self.assertEqual(stock_system.sales_result_for_on(ay24, after_tomorrow),
+                         ((0.825 - 0.81) * today_sale.security_quantity + (
+                                 0.83 - 0.81) * sale.security_quantity) * one_euro)
+
+    def test_commissions_result_for_on(self):
+        stock_system = StockSystem([purchase])
+        self.assertEqual(stock_system.open_positions[ay24], [OpenPosition(purchase)])
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, yesterday), 0)
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, today), -purchase.commissions)
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, tomorrow), -purchase.commissions)
+        # AY24 is not alive anymore
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, after_tomorrow), -purchase.commissions)
+
+    def test_commissions_result_for_multiple_open_positions(self):
+        stock_system = StockSystem([purchase, purchase_10000])
+        self.assertEqual(stock_system.open_positions[ay24], [OpenPosition(purchase), OpenPosition(purchase_10000)])
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, yesterday), 0)
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, today), -purchase.commissions)
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, tomorrow),
+                         -purchase.commissions - purchase_10000.commissions)
+        # AY24 is not alive anymore
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, after_tomorrow),
+                         -purchase.commissions - purchase_10000.commissions)
+
+    def test_commissions_result_for_one_closing_position(self):
+        stock_system = StockSystem([purchase, sale])
+        self.assertEqual(stock_system.open_positions[ay24], [open_position_1500])
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, yesterday), 0)
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, today), -purchase.commissions)
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, tomorrow),
+                         -purchase.commissions - sale.commissions)
+        # AY24 is not alive anymore
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, after_tomorrow),
+                         -purchase.commissions - sale.commissions)
+
+    def test_commissions_result_for_multiple_closing_positions(self):
+        stock_system = StockSystem([purchase, today_sale, sale])
+        self.assertEqual(stock_system.open_positions[ay24],
+                         [OpenPosition(purchase, [ClosingPosition(today_sale), closing_position_500])])
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, yesterday), 0)
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, today),
+                         -purchase.commissions - today_sale.commissions)
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, tomorrow),
+                         -purchase.commissions - sale.commissions - today_sale.commissions)
+        # AY24 is not alive anymore
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, after_tomorrow),
+                         -purchase.commissions - sale.commissions - today_sale.commissions)
+
+    def test_commissions_result_for_payments(self):
+        stock_system = StockSystem([purchase, coupon_clipping])
+        self.assertEqual(stock_system.open_positions[ay24], [OpenPosition(purchase)])
+        self.assertEqual(stock_system.payments[ay24], [coupon_clipping])
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, yesterday), 0)
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, today),
+                         -purchase.commissions)
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, tomorrow),
+                         -purchase.commissions - coupon_clipping.commissions)
+        # AY24 is not alive anymore
+        self.assertEqual(stock_system.commissions_result_for_on(ay24, after_tomorrow),
+                         -purchase.commissions - coupon_clipping.commissions)
+
+    def test_payments_result_for_on(self):
+        stock_system = StockSystem([])
+        self.assertEqual(stock_system.payments_result_for_on(ay24, today), 0)
+        stock_system = StockSystem([coupon_clipping])
+        self.assertEqual(stock_system.payments[ay24], [coupon_clipping])
+        self.assertEqual(stock_system.payments_result_for_on(ay24, yesterday), 0)
+        self.assertEqual(stock_system.payments_result_for_on(ay24, today), 0)
+        self.assertEqual(stock_system.payments_result_for_on(ay24, tomorrow),
+                         coupon_clipping.gross_payment())
+        # AY24 is not alive anymore
+        self.assertEqual(stock_system.payments_result_for_on(ay24, after_tomorrow),
+                         coupon_clipping.gross_payment())
+
+    def test_payments_result_for_multiple_coupon_clippings(self):
+        coupon_clipping_200 = CouponClipping(today, 200, euro, ay24, "IOL")
+        coupon_clipping_meli = CouponClipping(today, 350, euro, meli, "IOL")
+        stock_system = StockSystem([coupon_clipping, coupon_clipping_200, coupon_clipping_meli])
+        self.assertEqual(stock_system.payments[ay24], [coupon_clipping, coupon_clipping_200])
+        self.assertEqual(stock_system.payments[meli], [coupon_clipping_meli])
+        self.assertEqual(stock_system.payments_result_for_on(ay24, yesterday), 0)
+        self.assertEqual(stock_system.payments_result_for_on(meli, yesterday), 0)
+        self.assertEqual(stock_system.payments_result_for_on(ay24, today),
+                         coupon_clipping_200.gross_payment())
+        self.assertEqual(stock_system.payments_result_for_on(meli, today),
+                         coupon_clipping_meli.gross_payment())
+        self.assertEqual(stock_system.payments_result_for_on(ay24, tomorrow),
+                         coupon_clipping.gross_payment() + coupon_clipping_200.gross_payment())
+        self.assertEqual(stock_system.payments_result_for_on(meli, tomorrow),
+                         coupon_clipping_meli.gross_payment())
+        # AY24 is not alive anymore
+        self.assertEqual(stock_system.payments_result_for_on(ay24, after_tomorrow),
+                         coupon_clipping.gross_payment() + coupon_clipping_200.gross_payment())
+
+    def test_payments_result_for_dividends_payment(self):
+        dividends_payment = StockDividend(today, 200, euro, ay24, "IOL")
+        stock_system = StockSystem([coupon_clipping, dividends_payment])
+        self.assertEqual(stock_system.payments[ay24], [coupon_clipping, dividends_payment])
+        self.assertEqual(stock_system.payments_result_for_on(ay24, yesterday), 0)
+        self.assertEqual(stock_system.payments_result_for_on(ay24, today),
+                         dividends_payment.gross_payment())
+        self.assertEqual(stock_system.payments_result_for_on(ay24, tomorrow),
+                         coupon_clipping.gross_payment() + dividends_payment.gross_payment())
+        # AY24 is not alive anymore
+        self.assertEqual(stock_system.payments_result_for_on(ay24, after_tomorrow),
+                         coupon_clipping.gross_payment() + dividends_payment.gross_payment())
+
+    def test_price_difference_result_for_on_using(self):
+        stock_system = StockSystem([purchase])
+        self.assertEqual(stock_system.open_positions[ay24], [OpenPosition(purchase)])
+        self.assertEqual(stock_system.price_difference_result_for_on_using(ay24, euro, yesterday, valuation_system), 0)
+        self.assertEqual(stock_system.price_difference_result_for_on_using(ay24, euro, today, valuation_system),
+                         (0.82 - 0.81) * 2000 * one_euro)
+        self.assertEqual(stock_system.price_difference_result_for_on_using(ay24, euro, tomorrow, valuation_system),
+                         (0.85 - 0.81) * 2000 * one_euro)
+        # AY24 is not alive anymore
+        self.assertEqual(
+            stock_system.price_difference_result_for_on_using(ay24, euro, after_tomorrow, valuation_system),
+            (0.90 - 0.81) * 2000 * one_euro)
+
+    def test_price_difference_result_for_purchase_with_closing_positions(self):
+        stock_system = StockSystem([purchase, sale])
+        self.assertEqual(stock_system.open_positions[ay24], [open_position_1500])
+        self.assertEqual(stock_system.price_difference_result_for_on_using(ay24, euro, yesterday, valuation_system), 0)
+        self.assertEqual(stock_system.price_difference_result_for_on_using(ay24, euro, today, valuation_system),
+                         (0.82 - 0.81) * 2000 * one_euro)
+        self.assertEqual(stock_system.price_difference_result_for_on_using(ay24, euro, tomorrow, valuation_system),
+                         (0.85 - 0.81) * 1500 * one_euro)
+        # AY24 is not alive anymore
+        self.assertEqual(
+            stock_system.price_difference_result_for_on_using(ay24, euro, after_tomorrow, valuation_system),
+            (0.90 - 0.81) * 1500 * one_euro)

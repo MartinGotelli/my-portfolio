@@ -25,14 +25,29 @@ class ClosingPosition:
     def date(self):
         return self.outflow.date
 
+    def price(self):
+        return self.outflow.price
+
     def quantity_on(self, date):
-        if date < self.date() or not self.outflow.financial_instrument.is_alive_on(date):
+        if date < self.date():
             return 0
         else:
             return self.quantity()
 
+    def alive_quantity_on(self, date):
+        if self.outflow.financial_instrument.is_alive_on(date):
+            return self.quantity_on(date)
+        else:
+            return 0
+
     def quantity(self):
         return Measurement(self.security_quantity, self.outflow.financial_instrument)
+
+    def commissions_on(self, date):
+        if date >= self.date():
+            return self.outflow.commissions
+        else:
+            return 0
 
 
 class OpenPosition:
@@ -61,7 +76,18 @@ class OpenPosition:
     def balance_on(self, date):
         return self.inflow.security_quantity_if_alive_on(date) - self.closing_positions_balance_on(date)
 
+    def quantity_on(self, date):
+        if date >= self.date():
+            return Measurement(self.inflow.signed_security_quantity(),
+                               self.inflow.financial_instrument) - self.closing_positions_quantity_on(date)
+        else:
+            return 0
+
     def closing_positions_balance_on(self, date):
+        return sum([closing_position.alive_quantity_on(date) for closing_position in self.closing_positions if
+                    closing_position.date() <= date])
+
+    def closing_positions_quantity_on(self, date):
         return sum([closing_position.quantity_on(date) for closing_position in self.closing_positions if
                     closing_position.date() <= date])
 
@@ -73,6 +99,13 @@ class OpenPosition:
 
     def available_quantity_for(self, outflow):
         return min(self.balance_on(outflow.date).value(), outflow.security_quantity)
+
+    def commissions_on(self, date):
+        if date >= self.date():
+            return self.inflow.commissions + sum(
+                [closing_position.commissions_on(date) for closing_position in self.closing_positions])
+        else:
+            return 0
 
 
 def add_closing_positions_for_to(outflow, open_positions):
@@ -100,7 +133,7 @@ class OpenPositionCreator:
 
     def value(self):
         sorted_open_positions = sorted([OpenPosition(transaction) for transaction in self.inflows],
-                                       key=lambda open_position: open_position.date())
+                                       key=lambda a_open_position: a_open_position.date())
         for outflow in self.outflows:
             add_closing_positions_for_to(outflow, sorted_open_positions)
 
@@ -116,6 +149,11 @@ class StockSystem:
         if transactions is None:
             transactions = []
         self.open_positions = OpenPositionCreator(transactions).value()
+        self.payments = {}
+        for payment_transaction in transactions:
+            if payment_transaction.is_payment():
+                self.payments.setdefault(payment_transaction.referenced_financial_instrument, []).append(
+                    payment_transaction)
 
     def average_price_for_on(self, financial_instrument, date):
         # TODO: Hacer conversión de monedas
@@ -128,3 +166,37 @@ class StockSystem:
             total_balance = sum([open_position.balance_on(date) for open_position in open_positions])
 
             return round(sum(prices_for_quantity) / float(total_balance), 8)
+
+    def sales_result_for_on(self, financial_instrument, date):
+        # TODO: Hacer conversión de monedas
+        open_positions = self.open_positions.setdefault(financial_instrument, [])
+        return sum(
+            [(closing_position.price() - open_position.price()) * float(closing_position.quantity_on(date)) for
+             open_position in open_positions for closing_position in open_position.closing_positions])
+
+    def commissions_result_for_on(self, financial_instrument, date):
+        # TODO: Hacer conversión de monedas
+        open_positions = self.open_positions.setdefault(financial_instrument, [])
+        payments = self.payments.setdefault(financial_instrument, [])
+        return -sum([open_position.commissions_on(date) for open_position in open_positions]) - sum(
+            [payment.commissions for payment in payments if payment.date <= date])
+
+    def payments_result_for_on(self, financial_instrument, date):
+        # TODO: Hacer conversión de monedas
+        payments = self.payments.setdefault(financial_instrument, [])
+        return sum([payment.gross_payment() for payment in payments if payment.date <= date])
+
+    def price_difference_result_for_on_using(self, financial_instrument, currency, date, valuation_system):
+        # TODO: Hacer conversión de monedas
+        open_positions = self.open_positions.setdefault(financial_instrument, [])
+        return sum(
+            [self.price_difference_result_for_each_on_using(open_position, currency, date, valuation_system)
+             for open_position in open_positions])
+
+    def price_difference_result_for_each_on_using(self, open_position, currency, date, valuation_system):
+        quantity = open_position.quantity_on(date)
+        if quantity != 0:
+            return ((valuation_system.valuate_instrument_on(open_position.financial_instrument(), currency,
+                                                            date)) - open_position.price()) * float(quantity)
+        else:
+            return 0

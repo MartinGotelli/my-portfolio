@@ -192,7 +192,7 @@ class Measurement:
         return self == other or self > other
 
     def __eq__(self, other):
-        return is_same_unit(self, other) and float(self) == float(other)
+        return (float(self) == 0 and float(other) == 0) or is_same_unit(self, other) and float(self) == float(other)
 
     def __hash__(self):
         return hash((float(self.quantity), self.unit))
