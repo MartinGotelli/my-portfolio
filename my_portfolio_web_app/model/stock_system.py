@@ -1,8 +1,9 @@
-from model.exceptions import InstanceCreationFailed
-from model.measurement import Measurement
+from my_portfolio_web_app.model.exceptions import InstanceCreationFailed
+from my_portfolio_web_app.model.measurement import Measurement
 
 
 class ClosingPosition:
+
     def __init__(self, outflow, security_quantity=None):
         self.outflow = outflow
         if security_quantity is None:
@@ -26,7 +27,7 @@ class ClosingPosition:
         return self.outflow.date
 
     def price(self):
-        return self.outflow.price
+        return self.outflow.price()
 
     def quantity_on(self, date):
         if date < self.date():
@@ -45,7 +46,7 @@ class ClosingPosition:
 
     def commissions_on(self, date):
         if date >= self.date():
-            return self.outflow.commissions
+            return self.outflow.commissions()
         else:
             return 0
 
@@ -71,7 +72,7 @@ class OpenPosition:
         return self.inflow.financial_instrument
 
     def price(self):
-        return self.inflow.price
+        return self.inflow.price()
 
     def balance_on(self, date):
         return self.inflow.security_quantity_if_alive_on(date) - self.closing_positions_balance_on(date)
@@ -102,7 +103,7 @@ class OpenPosition:
 
     def commissions_on(self, date):
         if date >= self.date():
-            return self.inflow.commissions + sum(
+            return self.inflow.commissions() + sum(
                 [closing_position.commissions_on(date) for closing_position in self.closing_positions])
         else:
             return 0
@@ -179,7 +180,7 @@ class StockSystem:
         open_positions = self.open_positions.setdefault(financial_instrument, [])
         payments = self.payments.setdefault(financial_instrument, [])
         return -sum([open_position.commissions_on(date) for open_position in open_positions]) - sum(
-            [payment.commissions for payment in payments if payment.date <= date])
+            [payment.commissions() for payment in payments if payment.date <= date])
 
     def payments_result_for_on(self, financial_instrument, date):
         # TODO: Hacer conversión de monedas

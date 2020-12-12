@@ -1,13 +1,15 @@
 import datetime
 
-from model.exceptions import ObjectNotFound
-from model.measurement import Measurement
+from my_portfolio_web_app.model.exceptions import ObjectNotFound
+from my_portfolio_web_app.model.measurement import Measurement
 from services.dolar_si_api import DolarSiAPI
 from services.iol_api import IOLAPI
 
 
 class ValuationSourceFromDictionary:
-    def __init__(self, prices={}):
+    def __init__(self, prices=None):
+        if prices is None:
+            prices = {}
         self.prices = prices
 
     def prices_for_on(self, instrument, date):
@@ -80,7 +82,7 @@ class ValuationSystem:
     def valuate_account_on(self, account, currency, date, broker=None):
         return sum(
             [self.valuate_instrument_on(balance.unit, currency, date) * float(balance) for balance in
-             account.balances_on(date, broker).measurements])
+             account.balances_on(date, broker).as_bag().measurements])
 
     def valuate_transaction_on(self, transaction, currency, date):
         return float(transaction.security_quantity_if_alive_on(date)) * self.valuate_instrument_on(

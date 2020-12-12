@@ -1,14 +1,17 @@
 from abc import abstractmethod
 
+from django.db.models import CharField, IntegerField, DateField
 
-class FinancialInstrument:
-    def __init__(self, code, description, price_each_quantity=1):
-        self.code = code
-        self.description = description
-        self.price_each_quantity = price_each_quantity
+from my_portfolio_web_app.model.my_portfolio_model import MyPortfolioPolymorphicModel
+
+
+class FinancialInstrument(MyPortfolioPolymorphicModel):
+    code = CharField(max_length=200)
+    description = CharField(max_length=200)
+    price_each_quantity = IntegerField(default=1)
 
     def __eq__(self, obj):
-        return self.code == obj.code
+        return isinstance(obj, FinancialInstrument) and self.code == obj.code
 
     def __hash__(self):
         return hash(self.code)
@@ -35,9 +38,7 @@ class Currency(FinancialInstrument):
 
 
 class Bond(FinancialInstrument):
-    def __init__(self, code, description, maturity_date, price_each_quantity=1):
-        super().__init__(code, description, price_each_quantity)
-        self.maturity_date = maturity_date
+    maturity_date = DateField('Maturity Date')
 
     @staticmethod
     def is_currency(): return False
@@ -52,5 +53,5 @@ class Stock(FinancialInstrument):
     def is_alive_on(self, date): return True
 
 
-ars = Currency("$", "Pesos")
-usd = Currency("USD", "Dólares")
+ars = Currency(code="$", description="Pesos")
+usd = Currency(code="USD", description="Dólares")

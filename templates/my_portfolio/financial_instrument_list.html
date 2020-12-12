@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+
+    {% if financial_instrument_list %}
+        <ul>
+            {% for financial_instrument in financial_instrument_list %}
+                <li>
+                    <a href="{% url 'my-portfolio:currency_detail' financial_instrument.id %}">{{ financial_instrument.description }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No financial instruments are available.</p>
+    {% endif %}
+</head>
+<body>
+
+</body>
+</html>

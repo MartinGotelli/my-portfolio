@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+
+    {% if purchase_list %}
+        <ul>
+            {% for purchase in purchase_list %}
+                <li>
+                    <a
+                            {#  href="{% url 'my-portfolio:transaction_detail' transaction.id %}"#}>{{ purchase }}</a
+                            >
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No purchases are available.</p>
+    {% endif %}
+</head>
+<body>
+
+</body>
+</html>
