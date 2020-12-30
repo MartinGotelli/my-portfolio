@@ -20,8 +20,8 @@ class InvestmentIndividualAccount(MyPortfolioModel):
             self.transactions.add(transaction)
 
     def balance_of_on(self, financial_instrument, date):
-        return sum([transaction.signed_security_quantity() for transaction in
-                    self.transactions_of_up_to(financial_instrument, date)])
+        return float(sum([transaction.signed_security_quantity() for transaction in
+                          self.transactions_of_up_to(financial_instrument, date)]))
 
     def transactions_of_up_to(self, financial_instrument, date):
         return filter(

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cartera</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'my_portfolio/style.css' %}">
+</head>
+<body>
+{% if open_position_list %}
+    <table class="centered">
+        <tr>
+            <th class="th">Fecha</th>
+            <th class="th">Especie</th>
+            <th class="th">Cantidad</th>
+        </tr>
+        {% for open_position in open_position_list %}
+            <tr>
+                <td class="td">{{ open_position.inflow.date|date:"d/m/Y" }}</td>
+                <td class="td">{{ open_position.inflow.financial_instrument.code }}</td>
+                <td class="num">{{ open_position.inflow.security_quantity }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+{% else %}
+    <p>No open positions are available.</p>
+{% endif %}
+</body>
+</html>

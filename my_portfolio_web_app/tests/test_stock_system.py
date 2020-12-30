@@ -110,7 +110,7 @@ class TestOpenPosition(unittest.TestCase):
         self.assertEqual(open_position.date(), purchase.date)
         self.assertEqual(open_position.financial_instrument(), purchase.financial_instrument)
         self.assertEqual(open_position.price(), purchase.price())
-        self.assertEqual(str(open_position), "Partida de AY24 - 2000")
+        self.assertEqual(str(open_position), "Partida de AY24 - 2000 (Remanente 2000.0)")
 
     def test_add_closing_position(self):
         open_position = OpenPosition(purchase, [])

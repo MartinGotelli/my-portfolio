@@ -1,6 +1,11 @@
+from datetime import date
+
 from django.views import generic
 
 from my_portfolio_web_app.model.financial_instrument import FinancialInstrument, Currency
+from my_portfolio_web_app.model.investment_account import InvestmentPortfolio, InvestmentIndividualAccount
+from my_portfolio_web_app.model.stock_system import OpenPositionCreator, InvestmentPerformance, \
+    InvestmentPerformanceCalculator
 from my_portfolio_web_app.model.transaction import Transaction, Purchase
 
 
@@ -34,6 +39,31 @@ class CurrencyDetailView(generic.DetailView):
 
     def get_queryset(self):
         return Currency.objects.all()
+
+
+class StockView(generic.ListView):
+    template_name = 'my_portfolio/stock_view.html'
+    context_object_name = 'open_position_list'
+
+    def get_queryset(self):
+        return OpenPositionCreator(Transaction.objects.all()).value_as_list()
+
+
+class IndexView(generic.ListView):
+    template_name = "my_portfolio/index_view.html"
+    context_object_name = "investment_performance_list"
+
+    @staticmethod
+    def ars():
+        return Currency.objects.get(code='$')
+
+    def get_queryset(self):
+        performances = InvestmentPerformanceCalculator(InvestmentIndividualAccount.objects.all()[0],
+                                                       FinancialInstrument.objects.all(), self.ars(),
+                                                       date.today(), broker="IOL").instrument_performances()
+        performances.sort(key=lambda performance: performance.financial_instrument.code)
+
+        return performances
 
 # class ResultsView(generic.DetailView):
 #    model = Question
