@@ -1,3 +1,4 @@
+'''
 from my_portfolio_web_app.model import financial_instrument, transaction, measurement, investment_account
 from my_portfolio_web_app.model.stock_system import StockSystem
 from my_portfolio_web_app.model.transaction import Transaction
@@ -273,3 +274,9 @@ if __name__ == '__main__':
     results(tc20, stock_system)
     results(tj20, stock_system)
     results(tb21, stock_system)
+'''
+from services.iol_api import IOLAPI
+
+if __name__ == '__main__':
+    IOLAPI().set_user_and_password("mgotelli", "Kilombo6738")
+    print(IOLAPI().operations_from_to("2021-01-05", "2021-01-05"))

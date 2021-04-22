@@ -239,7 +239,7 @@ class InvestmentPerformanceCalculator:
         self.date = date
         self.broker = broker
         self.valuation_system = ValuationSystem(ValuationSourceFromIOLAPI())
-        IOLAPI().set_user_and_password("mgotelli", "Kilombo6738")
+        IOLAPI().set_user_and_password("mgotelli", "xxx")
 
     def stock_system(self):
         if self.broker is None:

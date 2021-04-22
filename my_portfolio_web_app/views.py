@@ -7,6 +7,7 @@ from my_portfolio_web_app.model.investment_account import InvestmentPortfolio, I
 from my_portfolio_web_app.model.stock_system import OpenPositionCreator, InvestmentPerformance, \
     InvestmentPerformanceCalculator
 from my_portfolio_web_app.model.transaction import Transaction, Purchase
+from services.iol_api import IOLAPI
 
 
 class FinancialInstrumentListView(generic.ListView):
@@ -65,6 +66,17 @@ class IndexView(generic.ListView):
 
         return performances
 
+
+class ImportIOLOperationsView(generic.ListView):
+    template_name = "my_portfolio/import_operations.html"
+    context_object_name = "draft_operations"
+
+    def get_queryset(self):
+        IOLAPI().set_user_and_password("mgotelli", "Kilombo6738")
+        operations = IOLAPI().operations_from_to("2021-01-05", "2021-01-05")
+        #operations.sort(key=lambda draft: draft.date())
+
+        return operations
 # class ResultsView(generic.DetailView):
 #    model = Question
 #    template_name = 'polls/results.html'

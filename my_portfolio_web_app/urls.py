@@ -9,6 +9,7 @@ urlpatterns = [
     path('transactions', views.TransactionsListView.as_view(), name='transactions_list'),
     path('purchases', views.PurchaseListView.as_view(), name='purchases_list'),
     path('stocks', views.StockView.as_view(), name='stock_view'),
-    path('', views.IndexView.as_view(), name = 'index_view')
+    path('import', views.ImportIOLOperationsView.as_view(), name='import_operations_view'),
+    path('', views.IndexView.as_view(), name='index_view')
     # path('<int:question_id>/vote/', views.vote, name='vote'),
 ]

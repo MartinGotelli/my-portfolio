@@ -1,4 +1,10 @@
+from datetime import datetime
+
 import requests
+
+from my_portfolio_web_app.model.financial_instrument import Currency, FinancialInstrument
+from my_portfolio_web_app.model.measurement import Measurement
+from my_portfolio_web_app.model.transaction import StockDividend, Purchase
 
 retry = 10
 
@@ -68,3 +74,66 @@ class IOLAPI(metaclass=Singleton):
             return self.price_for(financial_instrument, iteration + 1)
         else:
             self.error(response, financial_instrument.code)
+
+    def operations_from_to(self, from_date, to_date, iteration=0):
+        response = self.requests().get(endpoint("api/v2/operaciones"),
+                                       data={"estado": "terminadas", "fechaDesde": from_date,
+                                             "fechaHasta": to_date}, headers=self.token_headers())
+        if response.status_code == requests.codes.ok:
+            return self.operation_drafts_from(response.json())
+        elif response.status_code == requests.codes.service_unavailable and iteration < retry:
+            return self.operations_from_to(from_date, to_date, iteration + 1)
+        else:
+            self.error(response)
+
+    def operation_drafts_from(self, json_list):
+        return [IOLOperationDraft(json["numero"], json["tipo"], json["simbolo"], json["cantidadOperada"],
+                                  json["precioOperado"], json["montoOperado"], json["fechaOperada"]) for json in
+                json_list]
+
+
+class IOLOperationDraft:
+    def __init__(self, number, type, financial_instrument, quantity, price, gross_payment, date):
+        self.number = number
+        self.type = type
+        self.financial_instrument_code = financial_instrument
+        self.quantity = quantity
+        self.price_amount = price
+        self.gross_payment = gross_payment
+        self.date_string = date
+
+    def date(self):
+        datetime.strptime(self.date_string, "%Y-%m-%dT%H:%M:%S").date()
+
+    def currency(self):
+        if self.financial_instrument_code.endswith("US$"):
+            return Currency.objects.get(code='USD')
+        else:
+            return Currency.objects.get(code='$')
+
+    def financial_instrument(self):
+        if self.financial_instrument_code.endswith("US$"):
+            instrument_code = self.financial_instrument_code.split(" US$")[0]
+        else:
+            instrument_code = self.financial_instrument_code
+
+        # TODO: Qué pasa si el instrumento no existe, hay que crearlo
+        return FinancialInstrument.objects.get(code=instrument_code)
+
+    def commissions(self):
+        # TODO, hay que buscar la operación por número y sumar los aranceles
+        return 0
+
+    def price(self):
+        return Measurement(self.price_amount, self.currency())
+
+    def confirm_operation(self):
+        transaction_creation_lambdas = {
+            "Compra": lambda: Purchase(date=self.date(), financial_instrument=self.financial_instrument(),
+                                       price=self.price(), broker="IOL", commissions=self.commissions()).save(),
+            "Pago de Dividendos": lambda: StockDividend(date=self.date(), security_quantity=self.gross_payment,
+                                                        financial_instrument=self.currency(),
+                                                        referenced_financial_instrument=self.financial_instrument(),
+                                                        broker="IOL", commissions=self.commissions()).save(),
+        }
+        transaction_creation_lambdas.get(self.type)()
