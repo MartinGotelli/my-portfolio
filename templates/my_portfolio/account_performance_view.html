@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mi Portfolio</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'my_portfolio/style.css' %}">
+</head>
+<body>
+<p style="font-weight: bold;text-align: center;font-size: xxx-large">{{ account.description }}</p>
+
+<table class="centered">
+    <tr>
+        <th class="th">Especie</th>
+        <th class="th">Posición</th>
+        <th class="th">Precio Prom. Cmpra.</th>
+        <th class="th">Precio Actual</th>
+        <th class="th">Pos. Valuada</th>
+        <th class="th">Res. por Tenencia</th>
+        <th class="th">Res. por Cobros</th>
+        <th class="th">Res. por Ventas</th>
+        <th class="th">Res. por Comisiones</th>
+        <th class="th">Res. Total</th>
+    </tr>
+    {% if investment_performance_list %}
+        {% for performance in investment_performance_list %}
+            <tr>
+                <td class="td">{{ performance.financial_instrument.code }}</td>
+                <td class="num">{{ performance.current_position }}</td>
+                <td class="num">{{ performance.average_price }}</td>
+                <td class="num">{{ performance.current_price }}</td>
+                <td class="num">{{ performance.valuated_position }}</td>
+                <td class="num">{{ performance.price_difference_result }}</td>
+                <td class="num">{{ performance.payments_result }}</td>
+                <td class="num">{{ performance.sales_result }}</td>
+                <td class="num">{{ performance.commissions_result }}</td>
+                <td class="num-bold">{{ performance.total }}</td>
+            </tr>
+        {% endfor %}
+    {% endif %}
+    <tr>
+        <td class="td" style="font-weight: bold; font-size: x-large">TOTAL</td>
+        <td class="num"></td>
+        <td class="num"></td>
+        <td class="num"></td>
+        <td class="num-bold" style="font-size: x-large">{{ total_valuated_position }}</td>
+        <td class="num"></td>
+        <td class="num"></td>
+        <td class="num"></td>
+        <td class="num"></td>
+        <td class="num-bold" style="font-size: x-large">{{ total_performance }}</td>
+    </tr>
+</table>
+</body>
+</html>

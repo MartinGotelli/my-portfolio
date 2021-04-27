@@ -4,11 +4,18 @@
     <meta charset="UTF-8">
     {% load static %}
 
+    <form action="/my-portfolio/add-financial-instrument/">
+        <input type="submit" value="Agregar Instrumento"/>
+    </form>
+
     {% if financial_instrument_list %}
         <ul>
             {% for financial_instrument in financial_instrument_list %}
                 <li>
-                    <a href="{% url 'my-portfolio:currency_detail' financial_instrument.id %}">{{ financial_instrument.description }}</a>
+                    <!-- <a href="{% url 'my-portfolio:currency_detail' financial_instrument.id %}">{{ financial_instrument.description }}</a>-->
+                    <a href="{% url 'my-portfolio:'|add:financial_instrument.class_name|add:'_detail' financial_instrument.id %}">
+                        {{ financial_instrument }}
+                    </a>
                 </li>
             {% endfor %}
         </ul>

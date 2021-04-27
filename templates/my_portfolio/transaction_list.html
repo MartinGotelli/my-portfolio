@@ -3,17 +3,42 @@
 <head>
     <meta charset="UTF-8">
     {% load static %}
+    {% load mathfilters %}
+    <link rel="stylesheet" type="text/css" href="{% static 'my_portfolio/style.css' %}">
 
     {% if transaction_list %}
-        <ul>
+        <table class="centered">
+            <tr>
+                <th class="th">Fecha</th>
+                <th class="th">Cuenta</th>
+                <th class="th">Broker</th>
+                <th class="th">Especie</th>
+                <th class="th">Especie Referencia</th>
+                <th class="th">Tipo</th>
+                <th class="th">Cantidad</th>
+                <th class="th">Precio</th>
+                <th class="th">Bruto</th>
+                <th class="th">Comisión $</th>
+                <th class="th">Comisión USD</th>
+                <th class="th">Total</th>
+            </tr>
             {% for transaction in transaction_list %}
-                <li>
-                    <a
-                            {#  href="{% url 'my-portfolio:transaction_detail' transaction.id %}"#}>{{ transaction }}</a
-                            >
-                </li>
+                <tr>
+                    <td class="td">{{ transaction.date|date:"d/m/Y" }}</td>
+                    <td class="td">{{ "Andrés" }}</td>
+                    <td class="td">{{ transaction.broker }}</td>
+                    <td class="td">{{ transaction.financial_instrument.code }}</td>
+                    <td class="td">{{ transaction.referenced_financial_instrument.code }}</td>
+                    <td class="td">{{ transaction.type }}</td>
+                    <td class="num">{{ transaction.security_quantity }}</td>
+                    <td class="num">{{ transaction.price }}</td>
+                    <td class="num">{{ transaction.gross_payment }}</td>
+                    <td class="num">{{ transaction.ars_commissions }}</td>
+                    <td class="num">{{ transaction.usd_commissions }}</td>
+                    <td class="num">{{ transaction.gross_payment|sub:transaction.commissions }}</td>
+                </tr>
             {% endfor %}
-        </ul>
+        </table>
     {% else %}
         <p>No transactions are available.</p>
     {% endif %}

@@ -1,12 +1,16 @@
 from abc import abstractmethod
 
-from django.db.models import CharField, IntegerField, DateField
+from django.db.models import (
+    CharField,
+    IntegerField,
+    DateField,
+)
 
 from my_portfolio_web_app.model.my_portfolio_model import MyPortfolioPolymorphicModel
 
 
 class FinancialInstrument(MyPortfolioPolymorphicModel):
-    code = CharField(max_length=200)
+    code = CharField(max_length=200, unique=True)
     description = CharField(max_length=200)
     price_each_quantity = IntegerField(default=1)
 
@@ -28,6 +32,9 @@ class FinancialInstrument(MyPortfolioPolymorphicModel):
 
     @abstractmethod
     def is_alive_on(self, date): pass
+
+    def class_name(self):
+        return self.__class__.__name__.lower()
 
 
 class Currency(FinancialInstrument):

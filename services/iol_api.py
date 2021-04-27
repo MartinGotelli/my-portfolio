@@ -1,10 +1,18 @@
+import json
 from datetime import datetime
 
 import requests
+from cryptography.fernet import Fernet
 
-from my_portfolio_web_app.model.financial_instrument import Currency, FinancialInstrument
+from my_portfolio_web_app.model.financial_instrument import (
+    Currency,
+    FinancialInstrument,
+)
 from my_portfolio_web_app.model.measurement import Measurement
-from my_portfolio_web_app.model.transaction import StockDividend, Purchase
+from my_portfolio_web_app.model.transaction import (
+    StockDividend,
+    Purchase,
+)
 
 retry = 10
 
@@ -29,9 +37,18 @@ class IOLAPI(metaclass=Singleton):
     user = None
     password = None
 
-    def set_user_and_password(self, user, password):
-        self.user = user
-        self.password = password
+    def __init__(self):
+        self.set_user_and_password()
+
+    def set_user_and_password(self):
+        with open('fernet_key.ini', 'r') as key_file:
+            fernet_key = bytes(key_file.read(), 'utf-8')
+
+        with open('IOL_password.ini', 'r') as iol_ini:
+            iol_password_json = json.loads(Fernet(fernet_key).decrypt(bytes(iol_ini.read(), 'utf-8')))
+
+        self.user = iol_password_json['user']
+        self.password = iol_password_json['password']
 
     def requests(self):
         self.requests_count += 1
@@ -48,11 +65,13 @@ class IOLAPI(metaclass=Singleton):
     def refresh_token(self, iteration=0):
         if self.token_for_refresh is None:
             response = self.requests().get(endpoint("token"),
-                                           data={"username": self.user, "password": self.password,
-                                                 "grant_type": "password"})
+                                           data={
+                                               "username": self.user, "password": self.password,
+                                               "grant_type": "password"})
         else:
-            response = self.requests().get(endpoint("token"), data={"refresh_token": self.token_for_refresh,
-                                                                    "grant_type": "refresh_token"})
+            response = self.requests().get(endpoint("token"), data={
+                "refresh_token": self.token_for_refresh,
+                "grant_type": "refresh_token"})
         if response.status_code == requests.codes.ok:
             self.token = response.json()["access_token"]
             self.token_for_refresh = response.json()["refresh_token"]
@@ -77,8 +96,9 @@ class IOLAPI(metaclass=Singleton):
 
     def operations_from_to(self, from_date, to_date, iteration=0):
         response = self.requests().get(endpoint("api/v2/operaciones"),
-                                       data={"estado": "terminadas", "fechaDesde": from_date,
-                                             "fechaHasta": to_date}, headers=self.token_headers())
+                                       data={
+                                           "estado": "terminadas", "fechaDesde": from_date,
+                                           "fechaHasta": to_date}, headers=self.token_headers())
         if response.status_code == requests.codes.ok:
             return self.operation_drafts_from(response.json())
         elif response.status_code == requests.codes.service_unavailable and iteration < retry:

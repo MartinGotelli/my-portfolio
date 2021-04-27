@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Instrumento: {{ bond.code }}</title>
+    <h1>{{ bond.description }}</h1>
+    <p><strong>{{ bond }}</strong></p>
+    <p><strong>{{ bond.maturity_date }}</strong></p>
+    {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+</head>
+<body>
+
+</body>
+</html>

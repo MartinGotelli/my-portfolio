@@ -1,0 +1,14 @@
+<form action="" method="post" id="SubmitOk">
+    {% csrf_token %}
+    <table>
+        {{ object.as_table }}
+
+    </table>
+    <button type="submit">Delete</button>
+
+</form>
+<script>
+    $("#SubmitOk").on('submit', function (event) {
+        alert("Financial Instrument deleted successfully");
+    })
+</script>

@@ -1,8 +1,10 @@
 import datetime
 
 from my_portfolio_web_app.model.exceptions import ObjectNotFound
+from my_portfolio_web_app.model.financial_instrument import Currency
 from my_portfolio_web_app.model.measurement import Measurement
 from services.dolar_si_api import DolarSiAPI
+from services.google_sheet_api import GoogleSheetAPI
 from services.iol_api import IOLAPI
 
 
@@ -39,10 +41,11 @@ class ValuationSourceFromDictionary:
 
 
 class ValuationSourceFromIOLAPI:
-    def __init__(self, instruments_api=IOLAPI(), currencies_api=DolarSiAPI(), source=ValuationSourceFromDictionary()):
+    source = ValuationSourceFromDictionary()
+
+    def __init__(self, instruments_api=IOLAPI(), currencies_api=DolarSiAPI()):
         self.instruments_api = instruments_api
         self.currencies_api = currencies_api
-        self.source = source
 
     def api_for(self, instrument):
         if instrument.is_currency():
@@ -51,15 +54,15 @@ class ValuationSourceFromIOLAPI:
             return self.instruments_api
 
     def price_for_on(self, instrument, currency, date):
-        # TODO: if instrument == currency:
-        if instrument.is_currency():
+        if instrument == currency:
             return Measurement(1, instrument)
         else:
             if not instrument.is_alive_on(date):
-                return 0
+                return Measurement(0, currency)
             else:
                 try:
-                    return self.source.price_for_on(instrument, currency, date)
+                    price = self.source.price_for_on(instrument, currency, date)
+                    return price
                 except ObjectNotFound:
                     if date == datetime.date.today():
                         try:
@@ -69,10 +72,65 @@ class ValuationSourceFromIOLAPI:
                         except Exception as exception:
                             # TODO: Hacer bien
                             print(exception)
-                            return 0
+                            return Measurement(0, currency)
                     else:
                         raise ObjectNotFound(
                             "There is no " + currency.description + "price for " + instrument.code + " on " + str(date))
+
+
+class CurrenciesValuationSource:
+    source = ValuationSourceFromDictionary()
+
+    def price_for_on(self, instrument, currency, date):
+        if not instrument.is_currency():
+            return Measurement(0, currency)
+
+        if instrument == currency:
+            return Measurement(1, instrument)
+        else:
+            try:
+                return self.source.price_for_on(instrument, currency, date)
+            except ObjectNotFound:
+                if date == datetime.date.today():
+                    try:
+                        price = Measurement(DolarSiAPI().price_for(currency), currency)
+                        self.source.add_price_for_on(instrument, date, price)
+                        return price
+                    except Exception as exception:
+                        # TODO: Hacer bien
+                        print(exception)
+                        return Measurement(0, currency)
+                else:
+                    raise ObjectNotFound(
+                        "There is no " + currency.description + "price for " + instrument.code + " on " + str(date))
+
+
+class ValuationSourceFromGoogleSheet:
+    source = ValuationSourceFromDictionary()
+
+    def price_for_on(self, instrument, currency, date):
+        try:
+            price = self.source.price_for_on(instrument, currency, date)
+            return price
+        except ObjectNotFound:
+            price = Measurement(GoogleSheetAPI().price_for(instrument), currency)
+            self.source.add_price_for_on(instrument, date, price)
+            return price
+
+
+class ValuationByBruteForce:
+    def __init__(self, strategies):
+        self.strategies = strategies
+
+    def price_for_on(self, instrument, currency, date):
+        if not instrument.is_alive_on(date):
+            return Measurement(0, currency)
+        else:
+            for valuation_strategy in self.strategies:
+                price = valuation_strategy.price_for_on(instrument, currency, date)
+                if price != 0:
+                    return price
+            return Measurement(0, currency)
 
 
 class ValuationSystem:
@@ -89,4 +147,5 @@ class ValuationSystem:
             transaction.financial_instrument, currency, date)
 
     def valuate_instrument_on(self, instrument, currency, date):
-        return self.source.price_for_on(instrument, currency, date)
+        # TODO: Siempre valúo pesos
+        return Measurement(float(self.source.price_for_on(instrument, currency, date)), Currency.objects.get(code='$'))

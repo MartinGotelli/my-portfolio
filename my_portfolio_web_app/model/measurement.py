@@ -78,6 +78,20 @@ class BagMeasurement:
     def __rmul__(self, other):
         return self.__mul__(other)
 
+    def __truediv__(self, other):
+        if self == 0:
+            return 0
+        elif isinstance(other, Number) or (isinstance(other, Measurement) and other.unit == NullUnit()):
+            return BagMeasurement([measurement / float(other) for measurement in self.measurements])
+        else:
+            raise InvalidMathematicalOperation("Division for bags is only supported to numbers without unit")
+
+    def __rtruediv__(self, other):
+        if float(other) == 0:
+            return 0
+        else:
+            raise InvalidMathematicalOperation("Division for bags is only supported to numbers without unit")
+
     def __neg__(self):
         return BagMeasurement([-measurement for measurement in self.measurements])
 
@@ -94,7 +108,7 @@ class BagMeasurement:
                        len(other_measurements) == 1 and other_measurements[0] == 0))
 
     def __repr__(self):
-        return "Bolsa de:\n" + '\n'.join(
+        return ' + '.join(
             [str(measurement) for measurement in self.measurements])
 
     def non_zero_measurements(self):
@@ -135,6 +149,7 @@ class BagMeasurement:
 
     def as_bag(self):
         return self
+
 
 class NullUnit:
     def __init__(self):
