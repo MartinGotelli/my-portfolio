@@ -70,10 +70,6 @@ class OpenPosition:
             closing_positions = []
         self.inflow = inflow
         self.closing_positions = closing_positions
-        # TODO: DELETE
-        if self.inflow.financial_instrument.code == '$':
-            print(self)
-            print(inflow)
 
     def __repr__(self):
         return "Partida de " + self.inflow.financial_instrument.code + " - " + str(
@@ -114,10 +110,6 @@ class OpenPosition:
     def add_closing_position(self, closing_position):
         if self.balance_on(closing_position.date()) >= closing_position.quantity():
             self.closing_positions.append(closing_position)
-            # TODO: DELETE
-            if self.inflow.financial_instrument.code == '$':
-                print(self)
-                print(self.inflow)
         else:
             raise InstanceCreationFailed("Cannot add a closing position to this open position")
 
@@ -147,7 +139,7 @@ class MonetaryOpenPosition:
         for transaction in transactions:
             # If the movement is monetary we just need the commissions
             if transaction.financial_instrument != self.currency:
-                measurements.extend(transaction.movements_on(transaction.date).as_bag().non_zero_measurements())
+                measurements.extend(transaction.monetary_movements_on(transaction.date).as_bag().non_zero_measurements())
             else:
                 measurements.extend((-transaction.commissions()).as_bag().non_zero_measurements())
 
@@ -233,9 +225,7 @@ class OpenPositionCreator:
     def value(self):
         sorted_open_positions = sorted([OpenPosition(transaction) for transaction in self.inflows],
                                        key=lambda a_open_position: a_open_position.date())
-        print(sorted_open_positions)
         self.add_monetary_open_positions(sorted_open_positions)
-        print([p for p in sorted_open_positions if p.financial_instrument().code == '$'])
         for outflow in self.outflows:
             add_closing_positions_for_to(outflow, sorted_open_positions)
 

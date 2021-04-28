@@ -1,8 +1,6 @@
-import json
 from datetime import datetime
 
 import requests
-from cryptography.fernet import Fernet
 
 from my_portfolio_web_app.model.financial_instrument import (
     Currency,
@@ -13,6 +11,7 @@ from my_portfolio_web_app.model.transaction import (
     StockDividend,
     Purchase,
 )
+from services.credentials_manager import CredentialsManager
 
 retry = 10
 
@@ -41,14 +40,9 @@ class IOLAPI(metaclass=Singleton):
         self.set_user_and_password()
 
     def set_user_and_password(self):
-        with open('fernet_key.ini', 'r') as key_file:
-            fernet_key = bytes(key_file.read(), 'utf-8')
-
-        with open('IOL_password.ini', 'r') as iol_ini:
-            iol_password_json = json.loads(Fernet(fernet_key).decrypt(bytes(iol_ini.read(), 'utf-8')))
-
-        self.user = iol_password_json['user']
-        self.password = iol_password_json['password']
+        credentials_manager = CredentialsManager()
+        self.user = credentials_manager.iol_username()
+        self.password = credentials_manager.iol_password()
 
     def requests(self):
         self.requests_count += 1

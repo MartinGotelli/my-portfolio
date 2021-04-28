@@ -1,9 +1,23 @@
 from abc import abstractmethod
 
-from django.db.models import DateField, DecimalField, ForeignKey, CharField, PROTECT
+from django.db.models import (
+    DateField,
+    DecimalField,
+    ForeignKey,
+    CharField,
+    PROTECT,
+)
 
-from my_portfolio_web_app.model.financial_instrument import FinancialInstrument, ars, usd
-from my_portfolio_web_app.model.measurement import Measurement, measurements_from, NullUnit
+from my_portfolio_web_app.model.financial_instrument import (
+    FinancialInstrument,
+    ars,
+    usd,
+)
+from my_portfolio_web_app.model.measurement import (
+    Measurement,
+    measurements_from,
+    NullUnit,
+)
 from my_portfolio_web_app.model.my_portfolio_model import MyPortfolioPolymorphicModel
 
 
@@ -55,6 +69,12 @@ class Transaction(MyPortfolioPolymorphicModel):
 
     def movements_on(self, date):
         return round(-self.commissions() - self.gross_payment() + self.security_quantity_if_alive_on(date), 2)
+
+    def monetary_movements_on(self, date):
+        if self.financial_instrument.is_currency():
+            return self.movements_on(date)
+        else:
+            return round(-self.commissions() - self.gross_payment(), 2)
 
     def security_quantity_if_alive_on(self, date):
         if self.financial_instrument.is_alive_on(date):

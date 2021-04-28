@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Credentials
+credentials.json
+token.json
+fernet_key.ini
+IOL_credentials.ini
