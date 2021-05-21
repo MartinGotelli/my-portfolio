@@ -1,0 +1,10 @@
+{% extends "my_portfolio/financial_instrument_delete_form.html" %}
+{% block extra_rows %}
+    <tr>
+        <th><label for="id_maturity_date">Fecha Vencimiento:</label></th>
+        <td>
+            <input type="text" name="maturity_date" maxlength="200" required="" id="id_maturity_date"
+                   value="{{ financial_instrument.maturity_date|date:"d/m/Y" }}" disabled="disabled">
+        </td>
+    </tr>
+{% endblock %}

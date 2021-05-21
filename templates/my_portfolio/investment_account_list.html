@@ -1,6 +1,6 @@
 {% extends "my_portfolio/base.html" %}
 
-{% block title %}Instrumentos Financieros{% endblock %}
+{% block title %}Cuentas{% endblock %}
 
 {% block content %}
     <form name="type_form" action="{{ STATIC_URL }}">
@@ -15,31 +15,29 @@
         {% endwith %}
     </form>
 
-    {% if financial_instrument_list %}
+    {% if investment_account_list %}
         <table class="centered">
             <tr>
-                <th class="th">Código</th>
                 <th class="th">Descripción</th>
                 <th class="th">Tipo</th>
-                <th class="th">Fecha Vencimiento</th>
+                <th class="th">Subcuentas</th>
                 <th class="th">Acciones</th>
             </tr>
-            {% for financial_instrument in financial_instrument_list %}
+            {% for investment_account in investment_account_list %}
                 <tr>
                     <td class="td">
-                        <a href="{% url 'my-portfolio:'|add:financial_instrument.class_name|add:'_detail' financial_instrument.id %}">
-                            {{ financial_instrument.code }}
+                        <a href="{% url 'my-portfolio:'|add:investment_account.class_name|add:'_detail' investment_account.id %}">
+                            {{ investment_account.description }}
                         </a>
                     </td>
-                    <td class="td">{{ financial_instrument.description }}</td>
-                    <td class="td">{{ financial_instrument.class_name }}</td>
-                    <td class="td">{{ financial_instrument.maturity_date|date:"d/m/Y" }}</td>
+                    <td class="td">{{ investment_account.class_name }}</td>
+                    <td class="td">{{ investment_account.accounts }}</td>
                     <td class="td">
                         <div>
-                            <a href="{% url 'my-portfolio:'|add:financial_instrument.class_name|add:'_update' financial_instrument.id %}">
+                            <a href="{% url 'my-portfolio:'|add:investment_account.class_name|add:'_update' investment_account.id %}">
                                 Edit
                             </a>
-                            <a href="{% url 'my-portfolio:'|add:financial_instrument.class_name|add:'_delete' financial_instrument.id %}">
+                            <a href="{% url 'my-portfolio:'|add:investment_account.class_name|add:'_delete' investment_account.id %}">
                                 Delete
                             </a>
                         </div>
@@ -48,6 +46,6 @@
             {% endfor %}
         </table>
     {% else %}
-        <p>No financial instruments are available.</p>
+        <p>No investment accounts are available.</p>
     {% endif %}
 {% endblock %}

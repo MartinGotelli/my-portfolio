@@ -1,55 +1,144 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Mi Portfolio</title>
-    {% load static %}
-    <link rel="stylesheet" type="text/css" href="{% static 'my_portfolio/style.css' %}">
-</head>
-<body>
-<p style="font-weight: bold;text-align: center;font-size: xxx-large">{{ account.description }}</p>
+{% extends "my_portfolio/base.html" %}
 
-<table class="centered">
-    <tr>
-        <th class="th">Especie</th>
-        <th class="th">Posición</th>
-        <th class="th">Precio Prom. Cmpra.</th>
-        <th class="th">Precio Actual</th>
-        <th class="th">Pos. Valuada</th>
-        <th class="th">Res. por Tenencia</th>
-        <th class="th">Res. por Cobros</th>
-        <th class="th">Res. por Ventas</th>
-        <th class="th">Res. por Comisiones</th>
-        <th class="th">Res. Total</th>
-    </tr>
-    {% if investment_performance_list %}
-        {% for performance in investment_performance_list %}
-            <tr>
-                <td class="td">{{ performance.financial_instrument.code }}</td>
-                <td class="num">{{ performance.current_position }}</td>
-                <td class="num">{{ performance.average_price }}</td>
-                <td class="num">{{ performance.current_price }}</td>
-                <td class="num">{{ performance.valuated_position }}</td>
-                <td class="num">{{ performance.price_difference_result }}</td>
-                <td class="num">{{ performance.payments_result }}</td>
-                <td class="num">{{ performance.sales_result }}</td>
-                <td class="num">{{ performance.commissions_result }}</td>
-                <td class="num-bold">{{ performance.total }}</td>
-            </tr>
-        {% endfor %}
-    {% endif %}
-    <tr>
-        <td class="td" style="font-weight: bold; font-size: x-large">TOTAL</td>
-        <td class="num"></td>
-        <td class="num"></td>
-        <td class="num"></td>
-        <td class="num-bold" style="font-size: x-large">{{ total_valuated_position }}</td>
-        <td class="num"></td>
-        <td class="num"></td>
-        <td class="num"></td>
-        <td class="num"></td>
-        <td class="num-bold" style="font-size: x-large">{{ total_performance }}</td>
-    </tr>
-</table>
-</body>
-</html>
+{% block title %}Mi Portfolio{% endblock %}
+
+{% block content %}
+    <p style="font-weight: bold;text-align: center;font-size: xxx-large">{{ account.description }}</p>
+
+
+    <form name="broker_form" action="{{ STATIC_URL }}">
+        <!-- action="{% url 'my-portfolio:'|add:account.class_name|add:'_performance_view' pk=account.pk %}"> -->
+        <label for="id_broker">Broker</label>
+        {% with broker=request.GET.broker %}
+            <select name="broker" id="id_broker" onchange="broker_form.submit();">
+                <option value="">Todos</option>
+                <option {% if broker == "IOL" %}selected{% endif %}>IOL</option>
+                <option {% if broker == "BALANZ" %}selected{% endif %}>BALANZ</option>
+            </select>
+        {% endwith %}
+        {% if request.GET.currency %}
+            <input type="hidden" name="currency" value="{{ request.GET.currency }}">
+        {% endif %}
+        {% if request.GET.hide_closed %}
+            <input type="hidden" name="hide_closed" value="{{ request.GET.hide_closed }}">
+        {% endif %}
+        {% if request.GET.show_currencies %}
+            <input type="hidden" name="show_currencies" value="{{ request.GET.show_currencies }}">
+        {% endif %}
+        {% if request.GET.exclude %}
+            <input type="hidden" name="exclude" value="{{ request.GET.exclude }}">
+        {% endif %}
+    </form>
+
+    <form name="currency_form" action="{{ STATIC_URL }}">
+        {% if request.GET.broker %}
+            <input type="hidden" name="broker" value="{{ request.GET.broker }}">
+        {% endif %}
+        <label for="id_currency">Moneda Valuación</label>
+        {% with currency=request.GET.currency %}
+            <select name="currency" id="id_currency" onchange="currency_form.submit();">
+                {% for selectable_currency in currencies %}
+                    <option {% if selectable_currency.code == currency %}selected{% endif %}>{{ selectable_currency.code }}</option>
+                {% endfor %}
+            </select>
+        {% endwith %}
+        {% if request.GET.hide_closed %}
+            <input type="hidden" name="hide_closed" value="{{ request.GET.hide_closed }}">
+        {% endif %}
+        {% if request.GET.show_currencies %}
+            <input type="hidden" name="show_currencies" value="{{ request.GET.show_currencies }}">
+        {% endif %}
+        {% if request.GET.exclude %}
+            <input type="hidden" name="exclude" value="{{ request.GET.exclude }}">
+        {% endif %}
+    </form>
+
+    <form name="show_currencies_form" action="{{ STATIC_URL }}">
+        {% if request.GET.broker %}
+            <input type="hidden" name="broker" value="{{ request.GET.broker }}">
+        {% endif %}
+        {% if request.GET.currency %}
+            <input type="hidden" name="currency" value="{{ request.GET.currency }}">
+        {% endif %}
+        {% if request.GET.hide_closed %}
+            <input type="hidden" name="hide_closed" value="{{ request.GET.hide_closed }}">
+        {% endif %}
+        {% with show_currencies=request.GET.show_currencies %}
+            <label>
+                Ocultar Monedas
+                <input type="checkbox" name="show_currencies"
+                       value="False" {% if show_currencies == "False" %}checked="checked"{% endif %}
+                       onclick="show_currencies_form.submit()">
+            </label>
+        {% endwith %}
+        {% if request.GET.exclude %}
+            <input type="hidden" name="exclude" value="{{ request.GET.exclude }}">
+        {% endif %}
+    </form>
+
+    <form name="hide_closed_form" action="{{ STATIC_URL }}">
+        {% if request.GET.broker %}
+            <input type="hidden" name="broker" value="{{ request.GET.broker }}">
+        {% endif %}
+        {% if request.GET.currency %}
+            <input type="hidden" name="currency" value="{{ request.GET.currency }}">
+        {% endif %}
+        {% with hide_closed=request.GET.hide_closed %}
+            <label>
+                Ocultar Partidas Cerradas
+                <input type="checkbox" name="hide_closed"
+                       value="True" {% if hide_closed == "True" %}checked="checked"{% endif %}
+                       onclick="hide_closed_form.submit()">
+            </label>
+        {% endwith %}
+        {% if request.GET.show_currencies %}
+            <input type="hidden" name="show_currencies" value="{{ request.GET.show_currencies }}">
+        {% endif %}
+        {% if request.GET.exclude %}
+            <input type="hidden" name="exclude" value="{{ request.GET.exclude }}">
+        {% endif %}
+    </form>
+
+    <table class="centered">
+        <tr>
+            <th class="th">Especie</th>
+            <th class="th">Posición</th>
+            <th class="th">Precio Prom. Cmpra.</th>
+            <th class="th">Precio Actual</th>
+            <th class="th">Pos. Valuada</th>
+            <th class="th">Res. por Tenencia</th>
+            <th class="th">Res. por Cobros</th>
+            <th class="th">Res. por Ventas</th>
+            <th class="th">Res. por Comisiones</th>
+            <th class="th">Res. Total</th>
+        </tr>
+        {% if investment_performance_list %}
+            {% for performance in investment_performance_list %}
+                <tr>
+                    <td class="td">{{ performance.financial_instrument.code }}</td>
+                    <td class="num">{{ performance.current_position }}</td>
+                    <td class="num">{{ performance.average_price }}</td>
+                    <td class="num">{{ performance.current_price }}</td>
+                    <td class="num">{{ performance.valuated_position }}</td>
+                    <td class="num">{{ performance.price_difference_result }}</td>
+                    <td class="num">{{ performance.payments_result }}</td>
+                    <td class="num">{{ performance.sales_result }}</td>
+                    <td class="num">{{ performance.commissions_result }}</td>
+                    <td class="num-bold">{{ performance.total }}</td>
+                </tr>
+            {% endfor %}
+        {% endif %}
+        <tr>
+            <td class="td" style="font-weight: bold; font-size: x-large">TOTAL</td>
+            <td class="num"></td>
+            <td class="num"></td>
+            <td class="num"></td>
+            <td class="num-bold" style="font-size: x-large">{{ total_valuated_position }}</td>
+            <td class="num-bold" style="font-size: x-large">{{ total_price_difference_result }}</td>
+            <td class="num"></td>
+            <td class="num"></td>
+            <td class="num"></td>
+            <td class="num-bold" style="font-size: x-large">{{ total_performance }}</td>
+        </tr>
+    </table>
+{% endblock %}

@@ -3,6 +3,7 @@ import datetime
 from my_portfolio_web_app.model.exceptions import ObjectNotFound
 from my_portfolio_web_app.model.financial_instrument import Currency
 from my_portfolio_web_app.model.measurement import Measurement
+from my_portfolio_web_app.model.transaction_manager import TransactionManager
 from services.dolar_si_api import DolarSiAPI
 from services.google_sheet_api import GoogleSheetAPI
 from services.iol_api import IOLAPI
@@ -140,7 +141,7 @@ class ValuationSystem:
     def valuate_account_on(self, account, currency, date, broker=None):
         return sum(
             [self.valuate_instrument_on(balance.unit, currency, date) * float(balance) for balance in
-             account.balances_on(date, broker).as_bag().measurements])
+             TransactionManager(account).balances_on(date, broker).as_bag().measurements])
 
     def valuate_transaction_on(self, transaction, currency, date):
         return float(transaction.security_quantity_if_alive_on(date)) * self.valuate_instrument_on(

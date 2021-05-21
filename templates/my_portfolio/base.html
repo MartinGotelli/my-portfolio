@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}My Portfolio{% endblock %}</title>
+    {% load static %}
+    {% load mathfilters %}
+    <link rel="stylesheet" type="text/css" href="{% static 'my_portfolio/style.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'my_portfolio/navbar_styles.css' %}">
+    <link rel="icon" href="{% static 'my_portfolio/my_portfolio_logo.png' %}">
+    <div class="navbar">
+        {% for menu_item in menu_items %}
+            {% if not menu_item.items %}
+                <a href="{% url menu_item.view_name %}">{{ menu_item.title }}</a>
+            {% else %}
+                <div class="dropdown">
+                    <button class="dropbtn"
+                            {% if menu_item.view_name %}
+                            style="cursor: pointer" onclick="openLink('{% url menu_item.view_name %}')"
+                            {% endif %}>
+                        {{ menu_item.title }}
+                        <i class="fa fa-caret-down"></i>
+                    </button>
+                    <div class="dropdown-content">
+                        {% for sub_item in menu_item.items %}
+                            {{ sub_item.html | safe }}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</head>
+<body>
+{% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+{% block content %}{% endblock %}
+</body>
+</html>
+<script>
+    function openLink(url) {
+        window.location.href = url
+    }
+</script>

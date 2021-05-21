@@ -1,0 +1,13 @@
+{% extends 'my_portfolio/account_detail.html' %}
+{% block title %}Cuenta {{ account.description }}{% endblock %}
+
+{% block button %}
+    <div style="text-align: center">
+        <button class="primary" type="submit" style="position: absolute">Borrar</button>
+    </div>
+    <script>
+        ("#SubmitOk").on('submit', function (event) {
+            alert("Financial Instrument deleted successfully");
+        })
+    </script>
+{% endblock %}

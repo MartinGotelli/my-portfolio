@@ -1,0 +1,24 @@
+{% extends "my_portfolio/base_create_form.html" %}
+
+{% block content %}
+    <label for="id_type">Tipo</label>
+    <select name="type" id="id_type" onchange="openCreateTransaction(this)">
+        <option value="">---</option>
+        {% for selectable_type in types %}
+            <option value="{{ selectable_type.value }}"
+                    {% if selectable_type.value == type %} selected {% endif %}
+            >{{ selectable_type.description }}</option>
+        {% endfor %}
+    </select>
+
+    {{ block.super }}
+
+    <script>
+        function openCreateTransaction(select) {
+            let url;
+            url = "{% url 'my-portfolio:transaction_create' %}"
+            url = url + select.value
+            window.location.href = url
+        }
+    </script>
+{% endblock %}

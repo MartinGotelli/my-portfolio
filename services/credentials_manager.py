@@ -2,6 +2,7 @@ import json
 import os
 
 from cryptography.fernet import Fernet
+from google.auth.exceptions import RefreshError
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -45,7 +46,12 @@ class CredentialsManager:
         # If there are no (valid) credentials available, let the user log in.
         if not credentials or not credentials.valid:
             if credentials and credentials.expired and credentials.refresh_token:
-                credentials.refresh(Request())
+                try:
+                    credentials.refresh(Request())
+                except RefreshError:
+                    # We delete the token to create once again
+                    os.remove('token.json')
+                    return self.get_google_credentials()
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'credentials.json', scopes)

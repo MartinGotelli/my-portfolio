@@ -5,6 +5,7 @@ from datetime import (
 from my_portfolio_web_app.model.exceptions import InstanceCreationFailed
 from my_portfolio_web_app.model.financial_instrument import Currency
 from my_portfolio_web_app.model.measurement import Measurement
+from my_portfolio_web_app.model.transaction_manager import TransactionManager
 from my_portfolio_web_app.model.valuation_system import (
     ValuationSystem,
     ValuationByBruteForce,
@@ -137,11 +138,8 @@ class MonetaryOpenPosition:
         measurements = []
 
         for transaction in transactions:
-            # If the movement is monetary we just need the commissions
-            if transaction.financial_instrument != self.currency:
-                measurements.extend(transaction.monetary_movements_on(transaction.date).as_bag().non_zero_measurements())
-            else:
-                measurements.extend((-transaction.commissions()).as_bag().non_zero_measurements())
+            measurements.extend(
+                transaction.monetary_movements_on(transaction.date).as_bag().non_zero_measurements())
 
         return sum([measurement for measurement in measurements if measurement.unit == self.currency])
 
@@ -223,11 +221,13 @@ class OpenPositionCreator:
             open_positions.append(MonetaryOpenPosition(currency, self.inflows, self.outflows))
 
     def value(self):
-        sorted_open_positions = sorted([OpenPosition(transaction) for transaction in self.inflows],
+        sorted_open_positions = sorted([OpenPosition(transaction) for transaction in self.inflows if
+                                        not transaction.financial_instrument.is_currency()],
                                        key=lambda a_open_position: a_open_position.date())
         self.add_monetary_open_positions(sorted_open_positions)
         for outflow in self.outflows:
-            add_closing_positions_for_to(outflow, sorted_open_positions)
+            if not outflow.financial_instrument.is_currency():
+                add_closing_positions_for_to(outflow, sorted_open_positions)
 
         open_positions_by_instrument = {}
         for open_position in sorted_open_positions:
@@ -324,6 +324,7 @@ class InvestmentPerformance:
 class InvestmentPerformanceCalculator:
     def __init__(self, account, financial_instruments, currency, date, broker=None):
         self.account = account
+        self.transaction_manager = TransactionManager(account)
         self.financial_instruments = financial_instruments
         self.currency = currency
         self.date = date
@@ -336,9 +337,9 @@ class InvestmentPerformanceCalculator:
     def stock_system(self):
         if self._stock_system is None:
             if self.broker is None:
-                transactions = self.account.registered_transactions()
+                transactions = self.transaction_manager.transactions
             else:
-                transactions = [transaction for transaction in self.account.registered_transactions() if
+                transactions = [transaction for transaction in self.transaction_manager.transactions if
                                 transaction.broker == self.broker]
             self._stock_system = StockSystem(transactions)
         return self._stock_system

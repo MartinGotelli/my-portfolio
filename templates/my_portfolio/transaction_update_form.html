@@ -1,0 +1,27 @@
+{% extends "my_portfolio/base.html" %}
+
+{% block title %}Editar{% endblock %}
+
+{% block content %}
+    <form action="" method="post" id="SubmitOk">
+        {% csrf_token %}
+        <table class="form">
+            {{ form.as_table }}
+        </table>
+        <div style="text-align: center">
+            <button class="primary" type="submit" style="position: absolute">Aceptar</button>
+        </div>
+    </form>
+
+    <form method="post"
+          action="{% url 'my-portfolio:'|add:view.model.class_name|add:'_create' %}">
+        {% csrf_token %}
+        {{ form.as_hidden }}
+        <a onclick="this.parentNode.submit();">Copiar</a>
+    </form>
+    <script>
+        ("#SubmitOk").on('submit', function (event) {
+            alert("Updated successfully");
+        })
+    </script>
+{% endblock %}

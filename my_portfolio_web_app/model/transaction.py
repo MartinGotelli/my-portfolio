@@ -1,7 +1,6 @@
 from abc import abstractmethod
 
 from django.db.models import (
-    DateField,
     DecimalField,
     ForeignKey,
     CharField,
@@ -12,13 +11,30 @@ from my_portfolio_web_app.model.financial_instrument import (
     FinancialInstrument,
     ars,
     usd,
+    Currency,
 )
+from my_portfolio_web_app.model.investment_account import InvestmentIndividualAccount
 from my_portfolio_web_app.model.measurement import (
     Measurement,
     measurements_from,
     NullUnit,
 )
-from my_portfolio_web_app.model.my_portfolio_model import MyPortfolioPolymorphicModel
+from my_portfolio_web_app.model.my_portfolio_model import (
+    MyPortfolioPolymorphicModel,
+    CalendarDateField,
+)
+
+PURCHASE = 'Compra'
+SALE = 'Venta'
+INFLOW = 'Ingreso'
+OUTFLOW = 'Egreso'
+COUPON_CLIPPING = 'Pago de Renta y/o Amortización'
+STOCK_DIVIDEND = 'Pago de Dividendos'
+
+BROKERS = [
+    ('IOL', 'IOL'),
+    ('BALANZ', 'BALANZ'),
+]
 
 
 def amount_for_in(currency, measurement_or_bag):
@@ -31,14 +47,16 @@ def amount_for_in(currency, measurement_or_bag):
 
 
 class Transaction(MyPortfolioPolymorphicModel):
-    date = DateField("Date")
-    security_quantity = DecimalField(verbose_name="Security Quantity", decimal_places=2, max_digits=20)
-    financial_instrument = ForeignKey(FinancialInstrument, verbose_name="Financial Instrument", on_delete=PROTECT)
-    broker = CharField(max_length=10)
-    ars_commissions = DecimalField(verbose_name="Commissions ($)", decimal_places=2, default=0, max_digits=20)
-    usd_commissions = DecimalField(verbose_name="Commissions (USD)", decimal_places=2, default=0, max_digits=20)
-    price_unit = ForeignKey(FinancialInstrument, on_delete=PROTECT, related_name="price_unit", null=True)
-    price_amount = DecimalField(decimal_places=8, max_digits=20, default=0)
+    date = CalendarDateField('Fecha')
+    security_quantity = DecimalField(verbose_name='Cantidad Nominal', decimal_places=2, max_digits=20)
+    financial_instrument = ForeignKey(FinancialInstrument, verbose_name='Instrumento', on_delete=PROTECT)
+    broker = CharField(max_length=10, choices=BROKERS)
+    ars_commissions = DecimalField(verbose_name='Comisiones ($)', decimal_places=2, default=0, max_digits=20)
+    usd_commissions = DecimalField(verbose_name='Comisiones (USD)', decimal_places=2, default=0, max_digits=20)
+    price_unit = ForeignKey(Currency, on_delete=PROTECT, related_name='price_unit', null=True, blank=True,
+                            verbose_name='Moneda de Pago')
+    price_amount = DecimalField(decimal_places=6, max_digits=20, default=0.0, verbose_name='Precio')
+    account = ForeignKey(InvestmentIndividualAccount, on_delete=PROTECT, verbose_name='Cuenta')
 
     def __init__(self, *args, **kwargs):
         if 'price' in kwargs:
@@ -71,10 +89,14 @@ class Transaction(MyPortfolioPolymorphicModel):
         return round(-self.commissions() - self.gross_payment() + self.security_quantity_if_alive_on(date), 2)
 
     def monetary_movements_on(self, date):
-        if self.financial_instrument.is_currency():
-            return self.movements_on(date)
-        else:
-            return round(-self.commissions() - self.gross_payment(), 2)
+        return sum([measurement for measurement in self.movements_on(date).as_bag().non_zero_measurements() if
+                    measurement.unit.is_currency()]) + Measurement(0, NullUnit())
+
+    def movements(self):
+        return self.movements_on(self.date)
+
+    def monetary_movements(self):
+        return self.monetary_movements_on(self.date)
 
     def security_quantity_if_alive_on(self, date):
         if self.financial_instrument.is_alive_on(date):
@@ -85,7 +107,7 @@ class Transaction(MyPortfolioPolymorphicModel):
 
     @staticmethod
     def gross_payment():
-        return 0
+        return Measurement(0, NullUnit())
 
     @staticmethod
     def is_payment():
@@ -124,7 +146,7 @@ class Purchase(Trade):
 
     @property
     def type(self):
-        return 'Compra'
+        return PURCHASE
 
 
 class Sale(Trade):
@@ -133,7 +155,7 @@ class Sale(Trade):
 
     @property
     def type(self):
-        return 'Venta'
+        return SALE
 
 
 class Inflow(Transaction):
@@ -142,7 +164,7 @@ class Inflow(Transaction):
 
     @property
     def type(self):
-        return 'Ingreso'
+        return INFLOW
 
 
 class Outflow(Transaction):
@@ -151,11 +173,12 @@ class Outflow(Transaction):
 
     @property
     def type(self):
-        return 'Egreso'
+        return OUTFLOW
 
 
 class FinancialInstrumentTenderingPayment(Transaction, MyPortfolioPolymorphicModel):
-    referenced_financial_instrument = ForeignKey(FinancialInstrument, on_delete=PROTECT)
+    referenced_financial_instrument = ForeignKey(FinancialInstrument, on_delete=PROTECT,
+                                                 verbose_name='Instrumento Referencia')
 
     @abstractmethod
     def type(self): pass
@@ -170,14 +193,27 @@ class FinancialInstrumentTenderingPayment(Transaction, MyPortfolioPolymorphicMod
     def gross_payment(self):
         return Measurement(self.signed_security_quantity(), self.financial_instrument)
 
+    def movements_on(self, date):
+        return round(-self.commissions() + self.gross_payment(), 2)
+
 
 class CouponClipping(FinancialInstrumentTenderingPayment):
     @property
     def type(self):
-        return 'Pago de Renta y/o Amortización'
+        return COUPON_CLIPPING
 
 
 class StockDividend(FinancialInstrumentTenderingPayment):
     @property
     def type(self):
-        return 'Pago de Dividendos'
+        return STOCK_DIVIDEND
+
+
+TRANSACTION_CLASSES_BY_TYPES = {
+    PURCHASE: Purchase,
+    SALE: Sale,
+    INFLOW: Inflow,
+    OUTFLOW: Outflow,
+    COUPON_CLIPPING: CouponClipping,
+    STOCK_DIVIDEND: StockDividend,
+}

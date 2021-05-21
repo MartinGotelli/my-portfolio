@@ -1,0 +1,33 @@
+{% extends "my_portfolio/base.html" %}
+
+{% block title %}Borrar {{ financial_instrument }}{% endblock %}
+
+{% block content %}
+    <form action="" method="post" id="SubmitOk">
+        {% csrf_token %}
+        <table class="form">
+            <tbody>
+            <tr>
+                <th><label for="id_code">Código:</label></th>
+                <td><input type="text" name="code" maxlength="200" required="" id="id_code"
+                           value="{{ financial_instrument.code }}"
+                           disabled="disabled"></td>
+            </tr>
+            <tr>
+                <th><label for="id_description">Descripción:</label></th>
+                <td><input type="text" name="description" maxlength="200" required="" id="id_description"
+                           value="{{ financial_instrument.description }}" disabled="disabled"></td>
+            </tr>
+            {% block extra_rows %}{% endblock %}
+            </tbody>
+        </table>
+        <div style="text-align: center">
+            <button class="primary" type="submit" style="position: absolute">Borrar</button>
+        </div>
+    </form>
+    <script>
+        ("#SubmitOk").on('submit', function (event) {
+            alert("Financial Instrument deleted successfully");
+        })
+    </script>
+{% endblock %}

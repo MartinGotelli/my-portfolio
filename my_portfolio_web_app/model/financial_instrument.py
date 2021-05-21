@@ -2,17 +2,20 @@ from abc import abstractmethod
 
 from django.db.models import (
     CharField,
-    IntegerField,
-    DateField,
+    PositiveIntegerField,
 )
 
-from my_portfolio_web_app.model.my_portfolio_model import MyPortfolioPolymorphicModel
+from my_portfolio_web_app.model.my_portfolio_model import (
+    MyPortfolioPolymorphicModel,
+    UpperCaseCharField,
+    CalendarDateField,
+)
 
 
 class FinancialInstrument(MyPortfolioPolymorphicModel):
-    code = CharField(max_length=200, unique=True)
-    description = CharField(max_length=200)
-    price_each_quantity = IntegerField(default=1)
+    code = UpperCaseCharField(max_length=200, unique=True, verbose_name='Código')
+    description = CharField(max_length=200, verbose_name='Descripción')
+    price_each_quantity = PositiveIntegerField(default=1, verbose_name='Precio por Cada')
 
     def __eq__(self, obj):
         return isinstance(obj, FinancialInstrument) and self.code == obj.code
@@ -33,9 +36,6 @@ class FinancialInstrument(MyPortfolioPolymorphicModel):
     @abstractmethod
     def is_alive_on(self, date): pass
 
-    def class_name(self):
-        return self.__class__.__name__.lower()
-
 
 class Currency(FinancialInstrument):
     @staticmethod
@@ -45,7 +45,7 @@ class Currency(FinancialInstrument):
 
 
 class Bond(FinancialInstrument):
-    maturity_date = DateField('Maturity Date')
+    maturity_date = CalendarDateField('Fecha de Vencimiento')
 
     @staticmethod
     def is_currency(): return False

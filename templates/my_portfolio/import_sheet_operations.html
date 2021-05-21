@@ -1,0 +1,52 @@
+{% extends 'my_portfolio/base.html' %}
+{% block title %}Importar Operaciones{% endblock %}
+
+{% block content %}
+    <form action="">
+        <div>
+            <label for="id_from_date">Fecha Desde:</label>
+            <input type="date" name="from_date" required="" id="id_from_date" value="{{ request.GET.from_date }}">
+        </div>
+        <div>
+            <label for="id_to_date">Fecha Hasta:</label>
+            <input type="date" name="to_date" required="" id="id_to_date" value="{{ request.GET.to_date }}">
+        </div>
+        <button class="primary" type="submit" style="position: absolute">Filtrar</button>
+    </form>
+
+    {% if draft_operations %}
+        <table class="centered">
+            <tr>
+                <th class="th">Fecha</th>
+                <th class="th">Número</th>
+                <th class="th">Tipo</th>
+                <th class="th">Especie</th>
+                <th class="th">Cantidad</th>
+                <th class="th">Precio</th>
+                <th class="th">Monto</th>
+                <th class="th">Acciones</th>
+            </tr>
+            {% for operation in draft_operations %}
+                <tr>
+                    <td class="td">{{ operation.date_string }}</td>
+                    <td class="td">{{ operation.number }}</td>
+                    <td class="td">{{ operation.type }}</td>
+                    <td class="td">{{ operation.financial_instrument_code }}</td>
+                    <td class="num">{{ operation.quantity }}</td>
+                    <td class="num">{{ operation.price }}</td>
+                    <td class="num">{{ operation.gross_payment }}</td>
+                    <td class="td">
+                        <form method="POST"
+                              action="{% url 'my-portfolio:'|add:operation.operation_class.class_name|add:'_create' %}">
+                            {% csrf_token %}
+                            {{ operation.as_hidden }}
+                            <a onclick="this.parentNode.submit();">Crear Operación</a>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No hay operaciones para importar</p>
+    {% endif %}
+{% endblock %}

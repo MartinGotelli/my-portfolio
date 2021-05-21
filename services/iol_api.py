@@ -10,6 +10,8 @@ from my_portfolio_web_app.model.measurement import Measurement
 from my_portfolio_web_app.model.transaction import (
     StockDividend,
     Purchase,
+    Sale,
+    Transaction,
 )
 from services.credentials_manager import CredentialsManager
 
@@ -89,14 +91,18 @@ class IOLAPI(metaclass=Singleton):
             self.error(response, financial_instrument.code)
 
     def operations_from_to(self, from_date, to_date, iteration=0):
-        response = self.requests().get(endpoint("api/v2/operaciones"),
-                                       data={
-                                           "estado": "terminadas", "fechaDesde": from_date,
-                                           "fechaHasta": to_date}, headers=self.token_headers())
+        response = self.requests().get(endpoint('api/v2/operaciones'),
+                                       params={
+                                           'filtro.estado': 'terminadas', 'filtro.fechaDesde': from_date,
+                                           'filtro.fechaHasta': to_date}, headers=self.token_headers())
         if response.status_code == requests.codes.ok:
             return self.operation_drafts_from(response.json())
         elif response.status_code == requests.codes.service_unavailable and iteration < retry:
             return self.operations_from_to(from_date, to_date, iteration + 1)
+        elif response.status_code == requests.codes.unauthorized:
+            self.token_for_refresh = None
+            self.refresh_token()
+            return self.operations_from_to(from_date, to_date, iteration)
         else:
             self.error(response)
 
@@ -104,6 +110,13 @@ class IOLAPI(metaclass=Singleton):
         return [IOLOperationDraft(json["numero"], json["tipo"], json["simbolo"], json["cantidadOperada"],
                                   json["precioOperado"], json["montoOperado"], json["fechaOperada"]) for json in
                 json_list]
+
+
+OPERATION_CLASSES_BY_TYPE = {
+    'Compra': Purchase,
+    'Venta': Sale,
+    'Pago de Dividendos': StockDividend,
+}
 
 
 class IOLOperationDraft:
@@ -117,7 +130,7 @@ class IOLOperationDraft:
         self.date_string = date
 
     def date(self):
-        datetime.strptime(self.date_string, "%Y-%m-%dT%H:%M:%S").date()
+        return datetime.strptime(self.date_string, "%Y-%m-%dT%H:%M:%S").date()
 
     def currency(self):
         if self.financial_instrument_code.endswith("US$"):
@@ -141,13 +154,5 @@ class IOLOperationDraft:
     def price(self):
         return Measurement(self.price_amount, self.currency())
 
-    def confirm_operation(self):
-        transaction_creation_lambdas = {
-            "Compra": lambda: Purchase(date=self.date(), financial_instrument=self.financial_instrument(),
-                                       price=self.price(), broker="IOL", commissions=self.commissions()).save(),
-            "Pago de Dividendos": lambda: StockDividend(date=self.date(), security_quantity=self.gross_payment,
-                                                        financial_instrument=self.currency(),
-                                                        referenced_financial_instrument=self.financial_instrument(),
-                                                        broker="IOL", commissions=self.commissions()).save(),
-        }
-        transaction_creation_lambdas.get(self.type)()
+    def operation_class(self):
+        return OPERATION_CLASSES_BY_TYPE.get(self.type, Transaction)

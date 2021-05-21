@@ -41,37 +41,4 @@ class MeasurementField(CompositeField):
         else:
             proxy.quantity = value.quantity
             proxy.unit = value.unit
-
-    # class Proxy(CompositeField.Proxy):
-    #    def __getattr__(self, item):
-    #        try:
-    #            return super().__getattr__(item)
-    #        except AttributeError:
-
-    #    def measurement(self):
-    #        return Measurement(getattr(self, 'quantity'), getattr(self, 'unit'))
-#
-#    def __eq__(self, other):
-#        return self.measurement().__eq__(other)
-#
-#    def __add__(self, other):
-#        return self.measurement().__add__(other)
-#
-#    def __radd__(self, other):
-#        return self.measurement().__radd__(other)
-#
-#    def __sub__(self, other):
-#        return self.measurement().__sub__(other)
-#
-#    def __rsub__(self, other):
-#        return self.measurement().__rsub__(other)
-#
-#    def __mul__(self, other):
-#        return self.measurement().__mul__(other)
-#
-#    def __rmul__(self, other):
-#        return self.measurement().__rmul__(other)
-#
-#    def value(self):
-#        return self.measurement().value()
 #

@@ -246,7 +246,10 @@ class Measurement:
         return hash((float(self.quantity), self.unit))
 
     def __repr__(self):
-        return self.unit.code + ' ' + str(self.quantity)
+        if isinstance(self.unit, NullUnit):
+            return str(self.quantity)
+        else:
+            return self.unit.code + ' ' + str(self.quantity)
 
     def __int__(self):
         return int(self.value())

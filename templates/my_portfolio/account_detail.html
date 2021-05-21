@@ -1,0 +1,20 @@
+{% extends 'my_portfolio/base.html' %}
+{% block title %}Cuenta {{ account.description }}{% endblock %}
+
+{% block content %}
+    <form action="" method="post" id="SubmitOk">
+        {% csrf_token %}
+        <table class="form">
+            <tbody>
+            <tr>
+                <th><label for="id_code">Descripción:</label></th>
+                <td><input type="text" name="code" maxlength="200" required="" id="id_code"
+                           value="{{ account.description }}"
+                           disabled="disabled"></td>
+            </tr>
+            {% block extra_rows %}{% endblock %}
+            </tbody>
+        </table>
+        {% block button %}{% endblock %}
+    </form>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "my_portfolio/base.html" %}
+
+{% block title %}Editar{% endblock %}
+
+{% block content %}
+    <form action="" method="post" id="SubmitOk">
+        {% csrf_token %}
+        <table class="form">
+            {{ form.as_table }}
+        </table>
+        <div style="text-align: center">
+            <button class="primary" type="submit" style="position: absolute">Aceptar</button>
+        </div>
+    </form>
+    <script>
+        ("#SubmitOk").on('submit', function (event) {
+            alert("Updated successfully");
+        })
+    </script>
+{% endblock %}

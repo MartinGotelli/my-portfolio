@@ -1,0 +1,15 @@
+{% extends "my_portfolio/base.html" %}
+
+{% block title %}Borrar{% endblock %}
+
+{% block content %}
+    <form action="" method="post">
+        {% csrf_token %}
+        <table class="form">
+            {{ form.as_table }}
+        </table>
+        <div style="text-align: center">
+            <button class="primary" type="submit" style="position: absolute">Borrar</button>
+        </div>
+    </form>
+{% endblock %}
