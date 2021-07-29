@@ -13,11 +13,13 @@ from my_portfolio_web_app.views.transaction_views import (
     TransactionCreateView,
     TransactionUpdateView,
     TransactionSelectionCreateView,
+    clear_all_transactions,
 )
 
-paths = [
+urlpatterns = [
     path('transactions/<int:pk>/', TransactionsListView.as_view(), name='transactions_list'),
     path('transactions/', TransactionsListView.as_view(), name='all_transactions_list'),
+    path('transactions/clear/<int:account_pk>', clear_all_transactions, name='clear_transactions'),
     path('transactions/add/', TransactionSelectionCreateView.as_view(), name='transaction_create'),
     path('transactions/add/purchase/', TransactionCreateView.as_view(model=Purchase), name='purchase_create'),
     path('transactions/add/sale/', TransactionCreateView.as_view(model=Sale), name='sale_create'),

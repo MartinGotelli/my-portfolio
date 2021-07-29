@@ -2,9 +2,24 @@ import datetime
 
 from django.test import TestCase
 
-from my_portfolio_web_app.model.financial_instrument import ars, Currency, Bond, usd
-from my_portfolio_web_app.model.measurement import Measurement, NullUnit
-from my_portfolio_web_app.model.transaction import Purchase, Sale, Inflow, Outflow, CouponClipping, StockDividend
+from my_portfolio_web_app.model.financial_instrument import (
+    ars,
+    Currency,
+    Bond,
+    usd,
+)
+from my_portfolio_web_app.model.measurement import (
+    Measurement,
+    NullUnit,
+)
+from my_portfolio_web_app.model.transaction import (
+    Purchase,
+    Sale,
+    Inflow,
+    Outflow,
+    CouponClipping,
+    StockDividend,
+)
 
 euro = Currency(code='EUR', description='Euro')
 today = datetime.date(2020, 2, 2)
@@ -16,6 +31,12 @@ ay24 = Bond(code='AY24', description='Bonar 2024', maturity_date=tomorrow)
 def assert_movements_for_using(transaction, test_case):
     test_case.assertEqual(transaction.movements_on(today), transaction.security_quantity_if_alive_on(
         today) - transaction.gross_payment() - transaction.commissions())
+
+
+def assert_monetary_movements_for_using(transaction, test_case):
+    movements = transaction.movements_on(today)
+    monetary_movements = sum([movement for movement in movements.as_bag().measurements if movement.unit.is_currency()])
+    test_case.assertEqual(transaction.monetary_movements_on(today), monetary_movements)
 
 
 def assert_security_quantity_if_alive_on_for_using(transaction, test_case):
@@ -80,6 +101,9 @@ class TestPurchase(TestCase):
     def test_movements_on(self):
         assert_movements_for_using(self.purchase, self)
 
+    def test_monetary_movements_on(self):
+        assert_monetary_movements_for_using(self.purchase, self)
+
 
 class TestSale(TestCase):
     sale = Sale(date=today, security_quantity=2000, financial_instrument=ay24, price=Measurement(0.81, euro),
@@ -112,6 +136,9 @@ class TestSale(TestCase):
     def test_movements_on(self):
         assert_movements_for_using(self.sale, self)
 
+    def test_monetary_movements_on(self):
+        assert_monetary_movements_for_using(self.sale, self)
+
 
 class TestInflow(TestCase):
     inflow = Inflow(date=today, security_quantity=2000, financial_instrument=ay24, broker="IOL")
@@ -136,6 +163,9 @@ class TestInflow(TestCase):
 
     def test_movements_on(self):
         assert_movements_for_using(self.inflow, self)
+
+    def test_monetary_movements_on(self):
+        assert_monetary_movements_for_using(self.inflow, self)
 
 
 class TestOutflow(TestCase):
@@ -162,6 +192,9 @@ class TestOutflow(TestCase):
     def test_movements_on(self):
         assert_movements_for_using(self.outflow, self)
 
+    def test_monetary_movements_on(self):
+        assert_monetary_movements_for_using(self.outflow, self)
+
 
 class TestCouponClipping(TestCase):
     coupon_clipping = CouponClipping(date=today, security_quantity=2000, financial_instrument=euro,
@@ -185,7 +218,11 @@ class TestCouponClipping(TestCase):
         assert_security_quantity_if_alive_on_for_using(self.coupon_clipping, self)
 
     def test_movements_on(self):
-        assert_movements_for_using(self.coupon_clipping, self)
+        self.assertEqual(self.coupon_clipping.movements_on(today),
+                         self.coupon_clipping.monetary_movements_on(today))
+
+    def test_monetary_movements_on(self):
+        assert_monetary_movements_for_using(self.coupon_clipping, self)
 
     def test_gross_payment(self):
         self.assertEqual(self.coupon_clipping.gross_payment(), Measurement(2000, euro))
@@ -213,7 +250,11 @@ class TestStockDividend(TestCase):
         assert_security_quantity_if_alive_on_for_using(self.stock_dividend, self)
 
     def test_movements_on(self):
-        assert_movements_for_using(self.stock_dividend, self)
+        self.assertEqual(self.stock_dividend.movements_on(today),
+                         self.stock_dividend.monetary_movements_on(today))
+
+    def test_monetary_movements_on(self):
+        assert_monetary_movements_for_using(self.stock_dividend, self)
 
     def test_gross_payment(self):
         self.assertEqual(self.stock_dividend.gross_payment(), Measurement(2000, euro))

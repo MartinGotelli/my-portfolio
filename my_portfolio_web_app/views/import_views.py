@@ -1,10 +1,13 @@
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 from django.views.generic import ListView
 
+from my_portfolio_web_app.views.views import LoginRequiredView
 from services.google_sheet_api import GoogleSheetAPI
 from services.iol_api import IOLAPI
 
 
-class ImportIOLOperationsView(ListView):
+class ImportIOLOperationsView(ListView, LoginRequiredView):
     template_name = 'my_portfolio/import_iol_operations.html'
     context_object_name = 'draft_operations'
 
@@ -24,7 +27,7 @@ class ImportIOLOperationsView(ListView):
             return operations
 
 
-class ImportGoogleSheetOperationsView(ListView):
+class ImportGoogleSheetOperationsView(ListView, LoginRequiredView):
     template_name = 'my_portfolio/import_sheet_operations.html'
     context_object_name = 'draft_operations'
 
@@ -34,11 +37,20 @@ class ImportGoogleSheetOperationsView(ListView):
     def to_date(self):
         return self.request.GET.get('to_date')
 
+    def without_filter(self):
+        return self.request.GET.get('all') == 'True'
+
     def get_queryset(self):
-        if not self.from_date() or not self.to_date():
+        if (not self.from_date() or not self.to_date()) and not self.without_filter():
             return []
         else:
-            operations = GoogleSheetAPI().operations_from_to(self.from_date(), self.to_date())
+            operations = GoogleSheetAPI().operations_from_to(self.from_date(), self.to_date(), self.without_filter())
             # operations.sort(key=lambda draft: draft.date())
 
             return operations
+
+    def post(self, request, *args, **kwargs):
+        operations = self.get_queryset()
+        for operation in operations:
+            operation.create()
+        return HttpResponseRedirect(reverse('my-portfolio:all_transactions_list'))

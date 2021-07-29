@@ -5,14 +5,20 @@ from datetime import (
 from my_portfolio_web_app.model.exceptions import InstanceCreationFailed
 from my_portfolio_web_app.model.financial_instrument import Currency
 from my_portfolio_web_app.model.measurement import Measurement
+from my_portfolio_web_app.model.rates import Rate
 from my_portfolio_web_app.model.transaction_manager import TransactionManager
 from my_portfolio_web_app.model.valuation_system import (
-    ValuationSystem,
+    CurrenciesValuationSource,
+    MoneyConverter,
     ValuationByBruteForce,
     ValuationSourceFromGoogleSheet,
-    CurrenciesValuationSource,
     ValuationSourceFromIOLAPI,
+    ValuationSystem,
 )
+
+
+def convert_to(amount, currency, date):
+    return MoneyConverter(currency, date).convert_to(amount, currency)
 
 
 class ClosingPosition:
@@ -84,6 +90,17 @@ class OpenPosition:
     def date(self):
         return self.inflow.date
 
+    def closing_date(self):
+        if self.closing_positions:
+            max_closing_position_date = max(closing_position.date() for closing_position in self.closing_positions)
+        else:
+            max_closing_position_date = self.date()
+
+        if self.balance_on(max_closing_position_date) == 0:
+            return max_closing_position_date
+        else:
+            return None
+
     def financial_instrument(self):
         return self.inflow.financial_instrument
 
@@ -92,6 +109,14 @@ class OpenPosition:
 
     def balance_on(self, date):
         return self.inflow.security_quantity_if_alive_on(date) - self.closing_positions_balance_on(date)
+
+    def gross_payment_on(self, date=None):
+        if not date:
+            date = self.date()
+        return self.price() * self.balance_on(date).quantity
+
+    def security_quantity(self):
+        return self.inflow.security_quantity
 
     def quantity_on(self, date):
         if date >= self.date():
@@ -160,8 +185,14 @@ class MonetaryOpenPosition:
     def balance_on(self, date):
         return self.balance - self.closing_positions_balance_on(date)
 
+    def gross_payment_on(self, date=None):
+        return 0
+
     def quantity_on(self, date):
         return self.balance_on(date)
+
+    def security_quantity(self):
+        return 0
 
     def closing_positions_balance_on(self, date):
         return sum([closing_position.alive_quantity_on(date) for closing_position in self.closing_positions if
@@ -259,43 +290,104 @@ class StockSystem:
             prices_for_quantity = [open_position.price() * float(open_position.balance_on(date)) for open_position in
                                    open_positions]
             total_balance = sum([open_position.balance_on(date) for open_position in open_positions])
-
-            return round(sum(prices_for_quantity) / float(total_balance), 8)
+            if total_balance == 0:
+                return 0
+            else:
+                return round(sum(prices_for_quantity) / float(total_balance), 8)
 
     def sales_result_for_on(self, financial_instrument, date):
         # TODO: Hacer conversión de monedas
         open_positions = self.open_positions.setdefault(financial_instrument, [])
-        return sum(
-            [(closing_position.price() - open_position.price()) * float(closing_position.quantity_on(date)) for
-             open_position in open_positions for closing_position in open_position.closing_positions])
+        return sum([self.position_sales_result(open_position, date) for open_position in open_positions])
+
+    @staticmethod
+    def position_sales_result(open_position, date):
+        return sum([(closing_position.price() - open_position.price()) * float(closing_position.quantity_on(date)) for
+                    closing_position in open_position.closing_positions])
 
     def commissions_result_for_on(self, financial_instrument, date):
-        # TODO: Hacer conversión de monedas
         open_positions = self.open_positions.setdefault(financial_instrument, [])
         payments = self.payments.setdefault(financial_instrument, [])
-        return -sum([open_position.commissions_on(date) for open_position in open_positions]) - sum(
+        return sum([self.position_commissions_result(open_position, date) for open_position in open_positions]) - sum(
             [payment.commissions() for payment in payments if payment.date <= date])
 
+    @staticmethod
+    def position_commissions_result(open_position, date):
+        return -open_position.commissions_on(date)
+
     def payments_result_for_on(self, financial_instrument, date):
-        # TODO: Hacer conversión de monedas
         payments = self.payments.setdefault(financial_instrument, [])
         return sum([payment.gross_payment() for payment in payments if payment.date <= date])
 
+    def position_payments_result(self, open_position, currency, date):
+        payments = self.payments.setdefault(open_position.financial_instrument(), [])
+        return float(sum([convert_to(payment.monetary_movements(), currency, date) * float(open_position.balance_on(
+            payment.date)) / float(self.current_position_for_on(open_position.financial_instrument(), payment.date)) for
+                          payment in payments if payment.date <= date]))
+
     def price_difference_result_for_on_using(self, financial_instrument, currency, date, valuation_system):
-        # TODO: Hacer conversión de monedas
         open_positions = self.open_positions.setdefault(financial_instrument, [])
         return sum(
-            [self.price_difference_result_for_each_on_using(open_position, currency, date, valuation_system)
+            [self.position_price_difference_result(open_position, currency, date, valuation_system)
              for open_position in open_positions])
 
     @staticmethod
-    def price_difference_result_for_each_on_using(open_position, currency, date, valuation_system):
+    def position_price_difference_result(open_position, currency, date, valuation_system):
         quantity = open_position.quantity_on(date)
         if quantity != 0:
             return ((valuation_system.valuate_instrument_on(open_position.financial_instrument(), currency,
                                                             date)) - open_position.price()) * float(quantity)
         else:
             return 0
+
+    def performance_rate(self, financial_instrument, currency, date, valuation_system):
+        open_positions = self.open_positions.setdefault(financial_instrument, [])
+        total_position = float(
+            sum([open_position.balance_on(open_position.date()) for open_position in open_positions]))
+        return sum([self.position_weighted_performance_percentage(open_position, currency, date, valuation_system,
+                                                                  total_position) for
+                    open_position in open_positions])
+
+    def position_weighted_performance_percentage(self, open_position, currency, date, valuation_system, total_position):
+        if isinstance(open_position, MonetaryOpenPosition):
+            # TODO: CAMBIAR
+            return 0
+
+        initial_balance = float(open_position.balance_on(open_position.date()))
+
+        performance_percentage = self.position_performance_rate(open_position, currency, date, valuation_system)
+
+        if total_position == 0 or performance_percentage == 0:
+            return performance_percentage
+        else:
+            return performance_percentage * initial_balance / total_position
+
+    def position_performance_rate(self, open_position, currency, date, valuation_system):
+        initial_gross_payment = float(convert_to(open_position.gross_payment_on(), currency, date))
+
+        if initial_gross_payment == 0:
+            # TODO: Handlea el caso de IRC9O
+            return 0
+
+        sales_result_percentage = float(
+            convert_to(self.position_sales_result(open_position, date) / initial_gross_payment, currency, date))
+        commissions_result_percentage = float(
+            convert_to(self.position_commissions_result(open_position, date) / initial_gross_payment, currency, date))
+        price_difference_result_percentage = float(convert_to(
+            self.position_price_difference_result(open_position, currency, date,
+                                                  valuation_system) / initial_gross_payment, currency, date))
+        payments_result_percentage = float(
+            self.position_payments_result(open_position, currency, date) / initial_gross_payment)
+
+        return Rate(float(
+            sales_result_percentage + commissions_result_percentage + price_difference_result_percentage +
+            payments_result_percentage),
+            open_position.date(), date)
+
+    def total_investment_for_on(self, financial_instrument, date):
+        open_positions = self.open_positions.setdefault(financial_instrument, [])
+        return sum([open_position.gross_payment_on() for open_position in open_positions if
+                    open_position.date() <= date])
 
     def current_position_for_on(self, financial_instrument, date):
         open_positions = self.open_positions.setdefault(financial_instrument, [])
@@ -306,19 +398,22 @@ class StockSystem:
 
 
 class InvestmentPerformance:
-    def __init__(self, financial_instrument, current_position, average_price, current_price, price_difference_result,
-                 payments_result,
-                 sales_result, commissions_result):
+    def __init__(self, financial_instrument, current_position, average_price, total_investment, current_price,
+                 price_difference_result, payments_result, sales_result, commissions_result, performance_rate,
+                 open_position=None):
         self.financial_instrument = financial_instrument
         self.current_position = current_position
         self.average_price = average_price
+        self.total_investment = total_investment
         self.current_price = current_price
         self.valuated_position = round(self.current_position * self.current_price, 2)
         self.price_difference_result = price_difference_result
         self.payments_result = payments_result
         self.sales_result = sales_result
         self.commissions_result = commissions_result
+        self.performance_rate = performance_rate
         self.total = round(price_difference_result + payments_result + sales_result + commissions_result, 2)
+        self.open_position = open_position
 
 
 class InvestmentPerformanceCalculator:
@@ -347,28 +442,42 @@ class InvestmentPerformanceCalculator:
     def instrument_performances(self):
         performances = [InvestmentPerformance(financial_instrument, self.current_position_for(financial_instrument),
                                               self.average_price_for(financial_instrument),
+                                              self.total_investment_for(financial_instrument),
                                               self.current_price_for(financial_instrument),
                                               self.price_differences_result_for(financial_instrument),
                                               self.payments_result_for(financial_instrument),
                                               self.sales_result_for(financial_instrument),
-                                              self.commissions_result_for(financial_instrument)) for
+                                              self.commissions_result_for(financial_instrument),
+                                              self.performance_rate(financial_instrument)) for
                         financial_instrument in self.financial_instruments if
                         self.stock_system().has_or_had_position_for(financial_instrument)]
         return [performance for performance in performances if
                 (performance.current_position != 0 or performance.total != 0)]
 
-    def price_for(self, from_currency, to_currency):
-        return CurrenciesValuationSource().price_for_on(from_currency, to_currency, self.date)
+    def open_position_performances(self):
+        performances = []
+        for financial_instrument in self.financial_instruments:
+            performances.extend(
+                [InvestmentPerformance(financial_instrument, open_position.security_quantity(),
+                                       self.round_two_decimals(open_position.price()),
+                                       self.round_two_decimals(open_position.gross_payment_on()),
+                                       self.current_price_for(financial_instrument),
+                                       self.position_price_differences_result(open_position),
+                                       self.position_payments_result(open_position),
+                                       self.position_sales_result(open_position),
+                                       self.position_commissions_result(open_position),
+                                       self.position_performance_rate(open_position),
+                                       open_position=open_position) for
+                 open_position in self.open_positions(financial_instrument) if
+                 self.stock_system().has_or_had_position_for(financial_instrument)])
+        return [performance for performance in performances if
+                (performance.current_position != 0 or performance.total != 0)]
 
-    def convert_from_to(self, quantity, from_currency, to_currency):
-        return quantity * self.price_for(from_currency, to_currency)
+    def open_positions(self, financial_instrument):
+        return self.stock_system().open_positions.setdefault(financial_instrument, [])
 
     def convert_to(self, amount, currency):
-        if amount == 0:
-            return Measurement(0, currency)
-        else:
-            return sum([self.convert_from_to(measurement.quantity, measurement.unit, currency) for measurement in
-                        amount.as_bag().non_zero_measurements()])
+        return convert_to(amount, currency, self.date)
 
     @staticmethod
     def round_two_decimals(value):
@@ -385,20 +494,46 @@ class InvestmentPerformanceCalculator:
         return self.round_and_convert_to(
             self.stock_system().average_price_for_on(financial_instrument, self.date))
 
+    def total_investment_for(self, financial_instrument):
+        return self.round_and_convert_to(self.stock_system().total_investment_for_on(financial_instrument, self.date))
+
     def current_price_for(self, financial_instrument):
         return self.round_and_convert_to(
             self.valuation_system.valuate_instrument_on(financial_instrument, self.currency, self.date))
 
     def price_differences_result_for(self, financial_instrument):
         return self.round_and_convert_to(
-            self.stock_system().price_difference_result_for_on_using(financial_instrument, self.currency,
-                                                                     self.date, self.valuation_system))
+            self.stock_system().price_difference_result_for_on_using(financial_instrument, self.currency, self.date,
+                                                                     self.valuation_system))
+
+    def position_price_differences_result(self, open_position):
+        return self.round_and_convert_to(
+            self.stock_system().position_price_difference_result(open_position, self.currency, self.date,
+                                                                 self.valuation_system))
 
     def payments_result_for(self, financial_instrument):
         return self.round_and_convert_to(self.stock_system().payments_result_for_on(financial_instrument, self.date))
 
+    def position_payments_result(self, open_position):
+        # TODO: Hacer bien, ponderado?
+        return self.round_and_convert_to(0)
+
     def sales_result_for(self, financial_instrument):
         return self.round_and_convert_to(self.stock_system().sales_result_for_on(financial_instrument, self.date))
 
+    def position_sales_result(self, open_position):
+        return self.round_and_convert_to(self.stock_system().position_sales_result(open_position, self.date))
+
     def commissions_result_for(self, financial_instrument):
         return self.round_and_convert_to(self.stock_system().commissions_result_for_on(financial_instrument, self.date))
+
+    def position_commissions_result(self, open_position):
+        return self.round_and_convert_to(self.stock_system().position_commissions_result(open_position, self.date))
+
+    def performance_rate(self, financial_instrument):
+        return self.stock_system().performance_rate(financial_instrument, self.currency, self.date,
+                                                    self.valuation_system)
+
+    def position_performance_rate(self, open_position):
+        return self.stock_system().position_performance_rate(open_position, self.currency, self.date,
+                                                             self.valuation_system)

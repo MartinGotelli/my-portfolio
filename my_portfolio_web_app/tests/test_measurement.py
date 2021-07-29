@@ -1,6 +1,21 @@
 import unittest
-from my_portfolio_web_app.model.financial_instrument import ars, usd
-from my_portfolio_web_app.model.measurement import Measurement, BagMeasurement, NullUnit, InvalidMathematicalOperation
+from unittest.mock import Mock
+
+from my_portfolio_web_app.model.measurement import (
+    Measurement,
+    BagMeasurement,
+    NullUnit,
+    InvalidMathematicalOperation,
+)
+
+ars = Mock()
+ars.code = '$'
+ars.__eq__ = Mock(side_effect=lambda other: other.code == ars.code)
+ars.__hash__ = lambda x: 3
+usd = Mock()
+usd.code = 'USD'
+usd.__eq__ = Mock(side_effect=lambda other: other.code == usd.code)
+usd.__hash__ = lambda x: 4
 
 ars_200 = Measurement(200, ars)
 null_200 = Measurement(200, NullUnit())
@@ -104,11 +119,14 @@ class MeasurementTests(unittest.TestCase):
     def test_as_bag(self):
         self.assertEqual(null_200.as_bag(), BagMeasurement([null_200]))
 
+    def test_iteration(self):
+        self.assertEqual([ars_200], [measurement for measurement in ars_200])
+
 
 class BagMeasurementTest(unittest.TestCase):
     def test_creation(self):
         self.assertEqual(ars_200_plus_null_200.measurements, [ars_200, null_200])
-        self.assertEqual(str(ars_200_plus_null_200), "Bolsa de:\n$ 200\nN/A 200")
+        self.assertEqual(str(ars_200_plus_null_200), "$ 200 + 200")
 
     def test_equals(self):
         bag = BagMeasurement([ars_200])
@@ -170,5 +188,24 @@ class BagMeasurementTest(unittest.TestCase):
         with self.assertRaises(InvalidMathematicalOperation):
             ars_100_plus_usd_50 * ars_100
 
+    def test_divide(self):
+        self.assertEqual(ars_100_plus_usd_50 / 2, BagMeasurement([ars_100 / 2, usd_50 / 2]))
+        with self.assertRaises(InvalidMathematicalOperation):
+            2 / ars_100_plus_usd_50
+        self.assertEqual(ars_100_plus_usd_50 / 3.22, BagMeasurement([ars_100 / 3.22, usd_50 / 3.22]))
+        self.assertEqual(ars_100_plus_usd_50 / 1, ars_100_plus_usd_50)
+        with self.assertRaises(ZeroDivisionError):
+            ars_100_plus_usd_50 / 0
+        with self.assertRaises(InvalidMathematicalOperation):
+            ars_100_plus_usd_50 / ars_100
+        self.assertEqual(ars_100_plus_usd_50 / Measurement(2, NullUnit()), BagMeasurement([ars_100 / 2, usd_50 / 2]))
+        with self.assertRaises(InvalidMathematicalOperation):
+            ars_100_plus_usd_50 * ars_100_plus_usd_50
+        with self.assertRaises(InvalidMathematicalOperation):
+            ars_100_plus_usd_50 * ars_100
+
     def test_as_bag(self):
         self.assertEqual(ars_200_plus_null_200.as_bag(), ars_200_plus_null_200)
+
+    def test_iteration(self):
+        self.assertEqual(ars_100_plus_usd_50.measurements, [measurement for measurement in ars_100_plus_usd_50])

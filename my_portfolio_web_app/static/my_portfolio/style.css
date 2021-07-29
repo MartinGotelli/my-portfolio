@@ -19,10 +19,43 @@ td.num {
     text-align: right;
 }
 
+td.num-gray {
+    padding-right: 15px;
+    text-align: right;
+    color: lightgray;
+}
+
+
+td.num-red {
+    padding-right: 15px;
+    text-align: right;
+    color: darkred;
+}
+
+td.num-green {
+    padding-right: 15px;
+    text-align: right;
+    color: darkgreen;
+}
+
 td.num-bold {
     padding-right: 15px;
     text-align: right;
     font-weight: bold;
+}
+
+td.num-bold-red {
+    padding-right: 15px;
+    text-align: right;
+    font-weight: bold;
+    color: darkred;
+}
+
+td.num-bold-green {
+    padding-right: 15px;
+    text-align: right;
+    font-weight: bold;
+    color: darkgreen;
 }
 
 td {

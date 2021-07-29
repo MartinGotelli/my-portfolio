@@ -111,6 +111,9 @@ class BagMeasurement:
         return ' + '.join(
             [str(measurement) for measurement in self.measurements])
 
+    def __iter__(self):
+        return iter(self.measurements)
+
     def non_zero_measurements(self):
         return [measurement for measurement in self.measurements if measurement.value() != 0]
 
@@ -262,6 +265,9 @@ class Measurement:
 
     def __round__(self, n=None):
         return Measurement(round(self.value(), n), self.unit)
+
+    def __iter__(self):
+        return iter(self.as_bag())
 
     def not_supported_operation(self, operation):
         raise InvalidMathematicalOperation(operation + ' is not supported for this units')

@@ -22,6 +22,7 @@
                 <th class="th">Tipo</th>
                 <th class="th">Subcuentas</th>
                 <th class="th">Acciones</th>
+                <th class="th">sudo</th>
             </tr>
             {% for investment_account in investment_account_list %}
                 <tr>
@@ -39,6 +40,13 @@
                             </a>
                             <a href="{% url 'my-portfolio:'|add:investment_account.class_name|add:'_delete' investment_account.id %}">
                                 Delete
+                            </a>
+                        </div>
+                    </td>
+                    <td class="td">
+                        <div>
+                            <a href="{% url 'my-portfolio:clear_transactions' investment_account.pk %}">
+                                Borrar Operaciones
                             </a>
                         </div>
                     </td>

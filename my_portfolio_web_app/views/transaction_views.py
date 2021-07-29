@@ -1,3 +1,6 @@
+from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.views.generic import (
     ListView,
     TemplateView,
@@ -5,17 +8,25 @@ from django.views.generic import (
 
 from my_portfolio_web_app.model.investment_account import InvestmentIndividualAccount
 from my_portfolio_web_app.model.transaction import (
-    Transaction,
     TRANSACTION_CLASSES_BY_TYPES,
+    Transaction,
 )
 from my_portfolio_web_app.views.views import (
+    LoginRequiredView,
     MyPortfolioCreateView,
-    MyPortfolioUpdateView,
     MyPortfolioDeleteView,
+    MyPortfolioUpdateView,
 )
 
 
-class TransactionsListView(ListView):
+def clear_all_transactions(request, account_pk: int):
+    account = get_object_or_404(InvestmentIndividualAccount, pk=account_pk)
+    for transaction in Transaction.objects.filter(account=account):
+        transaction.delete()
+    return HttpResponseRedirect(reverse('my-portfolio:transactions_list', args=(account.pk,)))
+
+
+class TransactionsListView(ListView, LoginRequiredView):
     template_name = 'my_portfolio/transaction_list.html'
     context_object_name = 'transaction_list'
 
@@ -60,7 +71,7 @@ class TransactionCreateView(MyPortfolioCreateView):
         return context
 
 
-class TransactionSelectionCreateView(TemplateView):
+class TransactionSelectionCreateView(TemplateView, LoginRequiredView):
     template_name = 'my_portfolio/transaction_selection_create_form.html'
 
     def get_context_data(self, **kwargs):

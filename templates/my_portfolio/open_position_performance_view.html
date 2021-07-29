@@ -102,12 +102,14 @@
     <table class="centered">
         <tr>
             <th class="th" rowspan="2">Especie</th>
+            <th class="th" rowspan="2">Inicio</th>
+            <th class="th" rowspan="2">Cierre</th>
             <th class="th" rowspan="2">Posición</th>
             <th class="th" colspan="2">Precio</th>
             <th class="th" rowspan="2">Inversión Total</th>
             <th class="th" rowspan="2">Pos. Valuada</th>
             <th class="th" colspan="4">Resultados</th>
-            <th class="th" rowspan="2">Rendimiento</th>
+            <th class="th" colspan="2">Rendimiento</th>
             <th class="th" rowspan="2">Res. Total</th>
         </tr>
         <tr>
@@ -117,11 +119,15 @@
             <th class="th">Cobros</th>
             <th class="th">Ventas</th>
             <th class="th">Comisiones</th>
+            <th class="th">Efectivo</th>
+            <th class="th">TNA</th>
         </tr>
         {% if investment_performance_list %}
             {% for performance in investment_performance_list %}
                 <tr>
                     <td class="td">{{ performance.financial_instrument.code }}</td>
+                    <td class="td">{{ performance.open_position.date|date:'d/m/Y' }}</td>
+                    <td class="td">{{ performance.open_position.closing_date|date:'d/m/Y' }}</td>
                     <td class="num">{{ performance.current_position }}</td>
                     <td class="num">{{ performance.average_price }}</td>
                     <td class="num">{{ performance.current_price }}</td>
@@ -132,18 +138,16 @@
                     {{ performance.sales_result|number_html }}
                     {{ performance.commissions_result|number_html }}
                     {{ performance.performance_rate|number_html }}
+                    {{ performance.performance_rate.as_annual_nominal_rate|number_html }}
                     {{ performance.total|bold_number_html }}
-                    <td class="td">
-                        <a href="{% url 'my-portfolio:financial_instrument_performance_view' account.pk performance.financial_instrument.pk %}">
-                            Detalle
-                        </a>
-                    </td>
                 </tr>
             {% endfor %}
         {% endif %}
         <tr>
             <td class="td" style="font-weight: bold; font-size: x-large">TOTAL</td>
             <td class="num"></td>
+            <td class="num"></td>
+            <td class="num-bold" style="font-size: x-large">{{ view.total_position }}</td>
             <td class="num"></td>
             <td class="num"></td>
             <td class="num-bold" style="font-size: x-large">{{ view.total_investment }}</td>
@@ -152,7 +156,7 @@
             <td class="num-bold" style="font-size: x-large">{{ view.total_payments_result }}</td>
             <td class="num-bold" style="font-size: x-large">{{ view.total_sales_result }}</td>
             <td class="num-bold" style="font-size: x-large">{{ view.total_commissions_result }}</td>
-            <td class="num-bold" style="font-size: x-large">{{ view.total_performance_rate }}</td>
+            <td class="num-bold" style="font-size: x-large" colspan="2">{{ view.total_performance_rate }}</td>
             <td class="num-bold" style="font-size: x-large">{{ view.total_performance }}</td>
         </tr>
     </table>

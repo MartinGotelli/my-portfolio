@@ -3,9 +3,9 @@ from datetime import date
 from django.contrib.auth.models import User
 
 from my_portfolio_web_app.model.financial_instrument import (
-    Stock,
-    Currency,
     Bond,
+    Currency,
+    Stock,
 )
 from my_portfolio_web_app.model.investment_account import (
     InvestmentIndividualAccount,
@@ -13,12 +13,12 @@ from my_portfolio_web_app.model.investment_account import (
 )
 from my_portfolio_web_app.model.measurement import Measurement
 from my_portfolio_web_app.model.transaction import (
+    CouponClipping,
+    Inflow,
+    Outflow,
     Purchase,
     Sale,
-    CouponClipping,
     StockDividend,
-    Outflow,
-    Inflow,
 )
 
 """
@@ -69,6 +69,11 @@ if __name__ == '__main__':
     gold = Stock(code="GOLD", description="GOLD")
     pfe = Stock(code="PFE", description="PFEIZER")
     intc = Stock(code="INTC", description="INTEL")
+    ptsto = Bond(code='PTSTO', description='ON PETROBRAS ARG REGS 7,375%', maturity_date=date(2023, 7, 21))
+    spot = Stock(code='SPOT', description='SPOTIFY')
+    tsla = Stock(code='TSLA', description='TESLA')
+    teco2 = Stock(code='TECO2', description='TELECOM')
+    trip = Stock(code='TRIP', description='TRIP ADVISOR')
     pesos.save()
     dollars.save()
     mirg.save()
@@ -93,6 +98,11 @@ if __name__ == '__main__':
     gold.save()
     pfe.save()
     intc.save()
+    ptsto.save()
+    spot.save()
+    tsla.save()
+    teco2.save()
+    trip.save()
 
     print("Created instruments")
 
@@ -155,7 +165,7 @@ if __name__ == '__main__':
                          referenced_financial_instrument=rpc4o, broker="BALANZ", commissions=ars(2.5), account=pablo)
     t24 = CouponClipping(date=date(2020, 6, 12), security_quantity=1.42, financial_instrument=dollars,
                          referenced_financial_instrument=rpc4o, broker="BALANZ", commissions=ars(0.36), account=martin)
-    t25 = CouponClipping(date=date(2020, 6, 22), security_quantity=73427.44, financial_instrument=pesos,
+    t25 = CouponClipping(date=date(2020, 6, 21), security_quantity=73427.44, financial_instrument=pesos,
                          referenced_financial_instrument=tj20, broker="IOL", commissions=ars(31.07), account=martin)
     t26 = Purchase(date=date(2020, 6, 23), security_quantity=360, financial_instrument=csdoo, price=ars(82),
                    broker="BALANZ", commissions=ars(177.42), account=martin)
@@ -197,10 +207,10 @@ if __name__ == '__main__':
                          referenced_financial_instrument=to21, broker="IOL", commissions=ars(28.40), account=martin)
     t45 = Purchase(date=date(2020, 10, 8), security_quantity=27, financial_instrument=bma, price=ars(214), broker="IOL",
                    commissions=ars(40.55), account=martin)
-    t46 = Outflow(date=date(2020, 10, 28), security_quantity=307, financial_instrument=irc1o, broker="BALANZ",
-                  account=martin)
-    t47 = Inflow(date=date(2020, 10, 28), security_quantity=307, financial_instrument=irc9o, broker="BALANZ",
-                 account=martin)
+    t46 = Sale(date=date(2020, 10, 28), security_quantity=307, financial_instrument=irc1o, price=usd(1.005),
+               broker="BALANZ", account=martin)
+    t47 = Purchase(date=date(2020, 10, 28), security_quantity=307, financial_instrument=irc9o, price=usd(1.005),
+                   broker="BALANZ", account=martin)
     t48 = Purchase(date=date(2020, 10, 30), security_quantity=13, financial_instrument=ko, price=ars(1480),
                    broker="IOL", commissions=ars(135.02), account=andres)
     t49 = Purchase(date=date(2020, 10, 30), security_quantity=20, financial_instrument=abev, price=ars(1000),
@@ -296,6 +306,30 @@ if __name__ == '__main__':
                    broker="IOL", commissions=ars(205.26), account=martin)
     t94 = Purchase(date=date(2021, 4, 30), security_quantity=27, financial_instrument=auy, price=ars(725),
                    broker="IOL", commissions=ars(137.38), account=martin)
+    t95 = Purchase(date=date(2021, 5, 6), security_quantity=22, financial_instrument=spot, price=ars(1315),
+                   broker="IOL", commissions=ars(203.03), account=pablo)
+    t96 = Purchase(date=date(2021, 5, 6), security_quantity=12, financial_instrument=meli, price=ars(3875),
+                   broker="IOL", commissions=ars(326.34), account=pablo)
+    t97 = Purchase(date=date(2021, 5, 6), security_quantity=1000, financial_instrument=ptsto, price=ars(155),
+                   broker="BALANZ", commissions=ars(931.55), account=pablo)
+    t98 = Sale(date=date(2021, 6, 1), security_quantity=20, financial_instrument=abev, price=ars(1835), broker="IOL",
+               commissions=ars(257.56), account=andres)
+    t99 = Sale(date=date(2021, 6, 1), security_quantity=25, financial_instrument=abev, price=ars(1835), broker="IOL",
+               commissions=ars(321.95), account=pablo)
+    t100 = Sale(date=date(2021, 6, 1), security_quantity=20, financial_instrument=abev, price=ars(1835), broker="IOL",
+                commissions=ars(257.56), account=martin)
+    t101 = Sale(date=date(2021, 6, 2), security_quantity=36, financial_instrument=abev, price=ars(1850), broker="IOL",
+                commissions=ars(467.40), account=martin)
+    t102 = Purchase(date=date(2021, 6, 2), security_quantity=8, financial_instrument=tsla, price=ars(6710),
+                    broker="IOL", commissions=ars(376.72), account=martin)
+    t103 = Purchase(date=date(2021, 6, 2), security_quantity=210, financial_instrument=teco2, price=ars(190.25),
+                    broker="IOL", commissions=ars(280.38), account=martin)
+    t104 = Purchase(date=date(2021, 6, 2), security_quantity=16, financial_instrument=meli, price=ars(3750),
+                    broker="IOL", commissions=ars(421.08), account=pablo)
+    t105 = Purchase(date=date(2021, 6, 2), security_quantity=3, financial_instrument=trip, price=ars(3525),
+                    broker="IOL", commissions=ars(74.22), account=pablo)
+    t106 = Purchase(date=date(2021, 6, 2), security_quantity=11, financial_instrument=trip, price=ars(3525),
+                    broker="IOL", commissions=ars(272.12), account=andres)
 
     d1 = Inflow(date=date(2020, 1, 1), security_quantity=8498.30, financial_instrument=pesos, broker="IOL",
                 account=martin)  # Inicial
@@ -403,6 +437,15 @@ if __name__ == '__main__':
                  broker="IOL", account=martin)  # Cuenta remunerada
     d53 = Inflow(date=date(2021, 5, 1), security_quantity=0.01, financial_instrument=dollars,
                  broker="IOL", account=martin)  # Cuenta remunerada
+    d54 = Inflow(date=date(2021, 5, 6), security_quantity=185000, financial_instrument=pesos, broker="BALANZ",
+                 account=pablo)  # Depósito
+    d55 = Inflow(date=date(2021, 5, 6), security_quantity=100000, financial_instrument=pesos, broker="IOL",
+                 account=pablo)  # Depósito
+    d56 = Inflow(date=date(2021, 6, 1), security_quantity=822.86, financial_instrument=pesos,
+                 broker="IOL", account=martin)  # Cuenta remunerada
+    d57 = Inflow(date=date(2021, 6, 1), security_quantity=0.01, financial_instrument=dollars,
+                 broker="IOL", account=martin)  # Cuenta remunerada
+
     t1.save()
     t2.save()
     t3.save()
@@ -497,6 +540,18 @@ if __name__ == '__main__':
     t92.save()
     t93.save()
     t94.save()
+    t95.save()
+    t96.save()
+    t97.save()
+    t98.save()
+    t99.save()
+    t100.save()
+    t101.save()
+    t102.save()
+    t103.save()
+    t104.save()
+    t105.save()
+    t106.save()
 
     print("Saved all transactions")
 
@@ -553,5 +608,9 @@ if __name__ == '__main__':
     d51.save()
     d52.save()
     d53.save()
+    d54.save()
+    d55.save()
+    d56.save()
+    d57.save()
 
     print("Saved all deposit/extractions")

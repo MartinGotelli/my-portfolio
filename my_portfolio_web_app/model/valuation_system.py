@@ -150,3 +150,21 @@ class ValuationSystem:
     def valuate_instrument_on(self, instrument, currency, date):
         # TODO: Siempre valúo pesos
         return Measurement(float(self.source.price_for_on(instrument, currency, date)), Currency.objects.get(code='$'))
+
+
+class MoneyConverter:
+    def __init__(self, currency, date):
+        self.currency = currency
+        self.date = date
+
+    def price_for(self, from_currency, to_currency):
+        return CurrenciesValuationSource().price_for_on(from_currency, to_currency, self.date)
+
+    def convert_from(self, quantity, from_currency):
+        return quantity * self.price_for(from_currency, self.currency)
+
+    def convert_to(self, amount, currency):
+        if amount == 0:
+            return Measurement(0, currency)
+        else:
+            return sum([self.convert_from(measurement.quantity, measurement.unit) for measurement in amount])

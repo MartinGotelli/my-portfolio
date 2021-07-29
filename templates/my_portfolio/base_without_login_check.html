@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}My Portfolio{% endblock %}</title>
+    {% load static %}
+    {% load mathfilters %}
+    {% load extras %}
+    <link rel="stylesheet" type="text/css" href="{% static 'my_portfolio/style.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'my_portfolio/navbar_styles.css' %}">
+    <link rel="icon" href="{% static 'my_portfolio/my_portfolio_logo.png' %}">
+    {% block navbar %}
+    {% endblock %}
+</head>
+<body>
+{% block base_content %}
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+{% endblock %}
+</body>
+</html>
+<script>
+    function openLink(url) {
+        window.location.href = url
+    }
+</script>

@@ -103,7 +103,7 @@ class Transaction(MyPortfolioPolymorphicModel):
             return Measurement(self.signed_security_quantity(),
                                self.financial_instrument)
         else:
-            return 0
+            return Measurement(0, NullUnit())
 
     @staticmethod
     def gross_payment():

@@ -1,13 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{% block title %}My Portfolio{% endblock %}</title>
-    {% load static %}
-    {% load mathfilters %}
-    <link rel="stylesheet" type="text/css" href="{% static 'my_portfolio/style.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'my_portfolio/navbar_styles.css' %}">
-    <link rel="icon" href="{% static 'my_portfolio/my_portfolio_logo.png' %}">
+{% extends 'my_portfolio/base_without_login_check.html' %}
+{% block navbar %}
     <div class="navbar">
         {% for menu_item in menu_items %}
             {% if not menu_item.items %}
@@ -30,20 +22,13 @@
             {% endif %}
         {% endfor %}
     </div>
-</head>
-<body>
-{% if messages %}
-    <ul class="messages">
-        {% for message in messages %}
-            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-        {% endfor %}
-    </ul>
-{% endif %}
-{% block content %}{% endblock %}
-</body>
-</html>
-<script>
-    function openLink(url) {
-        window.location.href = url
-    }
-</script>
+{% endblock %}
+
+{% block base_content %}
+    {% if user.is_authenticated %}
+        {% block content %}{{ block.super }}{% endblock %}
+    {% else %}
+        <p>You are not logged in</p>
+        <a href="{% url 'my-portfolio:login' %}">Log In</a>
+    {% endif %}
+{% endblock %}

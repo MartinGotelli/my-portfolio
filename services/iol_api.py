@@ -130,7 +130,8 @@ class IOLOperationDraft:
         self.date_string = date
 
     def date(self):
-        return datetime.strptime(self.date_string, "%Y-%m-%dT%H:%M:%S").date()
+        date_str = self.date_string.split('T')[0]
+        return datetime.strptime(date_str, "%Y-%m-%d").date()
 
     def currency(self):
         if self.financial_instrument_code.endswith("US$"):

@@ -8,6 +8,7 @@ from googleapiclient.discovery import build
 from my_portfolio_web_app.model.financial_instrument import (
     Currency,
     FinancialInstrument,
+    Stock,
 )
 from my_portfolio_web_app.model.investment_account import InvestmentIndividualAccount
 from my_portfolio_web_app.model.measurement import Measurement
@@ -17,18 +18,27 @@ from my_portfolio_web_app.model.transaction import (
     CouponClipping,
     Sale,
     Purchase,
+    FinancialInstrumentTenderingPayment,
 )
 from services.credentials_manager import CredentialsManager
 
-PRICES_RANGE = 'Cotizaciones Test!A1:B'
+PRICES_RANGE = 'Cotizaciones!A1:B'
 OPERATIONS_RANGE = 'Transacciones!A1:Z'
+SHEET_ID = '1oaDgLdxTyQJN6k-gcNNBBF7T-qyTQY6fZ1f09d0e7AI'  # Michu
 
+
+# SHEET_ID = '1gmEHxkISBwkbGHWfd4M2x-P910kQNy2kajGegIp9kmw' # Martín
 
 def as_float(string):
     if not string:
         return 0
     else:
-        return float(string.replace('U$D', '').replace('$', '').replace('.', '').replace(',', '.'))
+        if '-' in string:
+            sign = -1
+        else:
+            sign = 1
+        return sign * float(
+            string.replace('-', '').replace('U$D', '').replace('$', '').replace('.', '').replace(',', '.'))
 
 
 class GoogleSheetAPI:
@@ -43,7 +53,7 @@ class GoogleSheetAPI:
 
         # Call the Sheets API
         sheet = service.spreadsheets()
-        result = sheet.values().get(spreadsheetId='1gmEHxkISBwkbGHWfd4M2x-P910kQNy2kajGegIp9kmw',
+        result = sheet.values().get(spreadsheetId=SHEET_ID,
                                     range=range).execute()
 
         return result.get('values', [])
@@ -71,13 +81,23 @@ class GoogleSheetAPI:
     def as_operation_data(self, row, header_row):
         return {header: row_value for row_value, header in zip(row, header_row)}
 
-    def operations_from_to(self, from_date, to_date):
+    def operations_from_to(self, from_date_string, to_date_string, without_filter=False):
         values = self.get_values_from_sheet(OPERATIONS_RANGE)
         header_row = values.pop(0)
+        date_index = header_row.index('Fecha')
         # Si no tiene fecha, lo descarto
-        values = (value for value in values if value[1] != '')
+        values = (value for value in values if value and value[date_index] != '')
 
-        return [GoogleSheetOperationDraft(self.as_operation_data(row, header_row)) for row in values]
+        drafts = []
+        from_date = without_filter or datetime.strptime(from_date_string, '%Y-%m-%d').date()
+        to_date = without_filter or datetime.strptime(to_date_string, '%Y-%m-%d').date()
+
+        for row in values:
+            date = datetime.strptime(row[date_index], '%d/%m/%Y').date()
+            if without_filter or from_date <= date <= to_date:
+                drafts.append(GoogleSheetOperationDraft(self.as_operation_data(row, header_row)))
+
+        return drafts
 
 
 OPERATION_CLASSES_BY_TYPE = {
@@ -91,39 +111,102 @@ OPERATION_CLASSES_BY_TYPE = {
 
 class GoogleSheetOperationDraft:
     def __init__(self, row_data):
-        self.number = row_data.get('Num')
+        self.number = row_data.get('Num') or 0
         self.type = row_data['Tipo']
         self.financial_instrument_code = row_data['Especie']
-        self.quantity = row_data['Nominales'].replace(',', '.')
+        self.currency_code = row_data['Moneda']
+        self.quantity = abs(as_float(row_data['Nominales'].replace(',', '.')))
         self.price_amount = as_float(row_data['Precio $'])
-        self.gross_payment = row_data['Bruto $']
+        self.ars_gross_payment_string = row_data['Bruto $']
+        self.ars_gross_payment = as_float(self.ars_gross_payment_string)
+        self.usd_gross_payment_string = row_data['Bruto U$D']
+        self.usd_gross_payment = as_float(self.usd_gross_payment_string)
         self.date_string = row_data['Fecha']
         self.broker = row_data['Broker']
-        self.ars_commissions = as_float(row_data['Total'])
-        self.usd_commissions = as_float(row_data['Comisión U$D'])
+        self.ars_commissions = round(as_float(row_data['Comisión']) + as_float(row_data['Derechos']), 2)
+        self.usd_commissions = round(as_float(row_data['Comisión U$D']), 2)
         self.account_name = row_data['Cuenta']
 
+    def create(self):
+        kwargs = {
+            'date': self.date(),
+            'security_quantity': self.security_quantity(),
+            'financial_instrument': self.financial_instrument(),
+            'broker': self.broker,
+            'ars_commissions': self.ars_commissions,
+            'usd_commissions': self.usd_commissions,
+            'account': self.account(),
+        }
+        if self.is_payment():
+            kwargs['referenced_financial_instrument'] = self.referenced_financial_instrument()
+        else:
+            kwargs['price'] = self.price()
+
+        self.operation_class().objects.create(**kwargs)
+
     def date(self):
-        return datetime.strptime(self.date_string, "%d/%m/%Y")
+        return datetime.strptime(self.date_string, "%d/%m/%Y").date()
+
+    def security_quantity(self):
+        if self.is_payment():
+            return self.ars_gross_payment or self.usd_gross_payment
+        else:
+            return self.quantity
+
+    @staticmethod
+    def ars():
+        return Currency.objects.get(code='$')
+
+    @staticmethod
+    def usd():
+        return Currency.objects.get(code='USD')
+
+    def is_payment(self):
+        return issubclass(self.operation_class(), FinancialInstrumentTenderingPayment)
+
+    def referenced_financial_instrument_pk(self):
+        instrument = self.referenced_financial_instrument()
+        if instrument:
+            return instrument.pk
+        else:
+            return instrument
+
+    def referenced_financial_instrument(self):
+        if self.is_payment():
+            return self.real_financial_instrument()
+        else:
+            return None
 
     def currency(self):
-        if self.financial_instrument_code.endswith("US$"):
-            return Currency.objects.get(code='USD')
+        if not self.currency_code:
+            if self.ars_gross_payment:
+                return self.ars()
+            else:
+                return self.usd()
         else:
-            return Currency.objects.get(code='$')
+            return Currency.objects.get(code=self.currency_code)
 
     def financial_instrument(self):
-        # TODO: Qué pasa si el instrumento no existe, hay que crearlo
-        return FinancialInstrument.objects.get(code=self.financial_instrument_code)
+        if self.is_payment():
+            return self.currency()
+        else:
+            return self.real_financial_instrument()
 
-    def commissions(self):
-        # TODO
-        return 0
+    def real_financial_instrument(self):
+        financial_instruments_by_code = FinancialInstrument.objects.filter(code=self.financial_instrument_code)
+        if len(financial_instruments_by_code) == 0:
+            Stock.objects.create(code=self.financial_instrument_code,
+                                 description=self.financial_instrument_code)
+
+        return FinancialInstrument.objects.get(code=self.financial_instrument_code)
 
     def price(self):
         return Measurement(self.price_amount, self.currency())
 
     def account(self):
+        accounts_by_name = InvestmentIndividualAccount.objects.filter(description=self.account_name)
+        if len(accounts_by_name) == 0:
+            InvestmentIndividualAccount.objects.create(description=self.account_name)
         return InvestmentIndividualAccount.objects.get(description=self.account_name)
 
     def operation_class(self):
@@ -134,14 +217,15 @@ class GoogleSheetOperationDraft:
 
     def as_hidden(self):
         inputs = [
-            self.as_hidden_input(self.date, 'date'),
-            self.as_hidden_input(self.quantity, 'security_quantity'),
+            self.as_hidden_input(self.date(), 'date'),
+            self.as_hidden_input(self.security_quantity(), 'security_quantity'),
             self.as_hidden_input(self.financial_instrument().pk, 'financial_instrument'),
             self.as_hidden_input(self.broker, 'broker'),
             self.as_hidden_input(self.ars_commissions, 'ars_commissions'),
             self.as_hidden_input(self.usd_commissions, 'usd_commissions'),
             self.as_hidden_input(self.price().unit.pk, 'price_unit'),
             self.as_hidden_input(self.price().quantity, 'price_amount'),
-            self.as_hidden_input(self.account().pk, 'account')
+            self.as_hidden_input(self.account().pk, 'account'),
+            self.as_hidden_input(self.referenced_financial_instrument_pk(), 'referenced_financial_instrument')
         ]
         return SafeString('\n'.join(inputs))

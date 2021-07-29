@@ -6,13 +6,14 @@ from my_portfolio_web_app.model.financial_instrument import (
     FinancialInstrument,
 )
 from my_portfolio_web_app.views.views import (
-    MyPortfolioDeleteView,
+    LoginRequiredView,
     MyPortfolioCreateView,
+    MyPortfolioDeleteView,
     MyPortfolioUpdateView,
 )
 
 
-class FinancialInstrumentListView(ListView):
+class FinancialInstrumentListView(ListView, LoginRequiredView):
     template_name = 'my_portfolio/financial_instrument_list.html'
     context_object_name = 'financial_instrument_list'
 

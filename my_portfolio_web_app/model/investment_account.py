@@ -33,4 +33,4 @@ class InvestmentPortfolio(MyPortfolioModel):
         # [str(account) for account in self.individual_accounts.all()])
 
     def accounts(self):
-        return self.individual_accounts.all()
+        return set(self.individual_accounts.all())

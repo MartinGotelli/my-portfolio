@@ -23,30 +23,43 @@
                 <th class="th">Especie</th>
                 <th class="th">Cantidad</th>
                 <th class="th">Precio</th>
-                <th class="th">Monto</th>
+                <th class="th">Monto $</th>
+                <th class="th">Monto U$D</th>
                 <th class="th">Acciones</th>
             </tr>
+            <form action="" method="POST">
+                {% csrf_token %}
+                <div style="text-align: center">
+                    <button class="primary" type="submit">Agregar Todas</button>
+                </div>
+            </form>
             {% for operation in draft_operations %}
                 <tr>
                     <td class="td">{{ operation.date_string }}</td>
                     <td class="td">{{ operation.number }}</td>
                     <td class="td">{{ operation.type }}</td>
                     <td class="td">{{ operation.financial_instrument_code }}</td>
-                    <td class="num">{{ operation.quantity }}</td>
+                    <td class="num">{{ operation.security_quantity }}</td>
                     <td class="num">{{ operation.price }}</td>
-                    <td class="num">{{ operation.gross_payment }}</td>
+                    <td class="num">{{ operation.ars_gross_payment }}</td>
+                    <td class="num">{{ operation.usd_gross_payment }}</td>
                     <td class="td">
+                        <form target="_blank" method="POST"
+                              action="{% url 'my-portfolio:'|add:operation.operation_class.class_name|add:'_create' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="send" value="true"/>
+                            {{ operation.as_hidden }}
+                            <a onclick="this.parentNode.submit();">Crear</a>
+                        </form>
                         <form method="POST"
                               action="{% url 'my-portfolio:'|add:operation.operation_class.class_name|add:'_create' %}">
                             {% csrf_token %}
                             {{ operation.as_hidden }}
-                            <a onclick="this.parentNode.submit();">Crear Operación</a>
+                            <a onclick="this.parentNode.submit();">Modificar</a>
                         </form>
                     </td>
                 </tr>
             {% endfor %}
         </table>
-    {% else %}
-        <p>No hay operaciones para importar</p>
     {% endif %}
 {% endblock %}

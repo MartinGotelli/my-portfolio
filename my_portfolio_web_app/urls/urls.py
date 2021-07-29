@@ -1,40 +1,41 @@
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.urls import (
+    include,
     path,
 )
 from django.views.generic import RedirectView
 
 from my_portfolio_web_app.model.financial_instrument import (
     Bond,
-    Stock,
     Currency,
+    Stock,
 )
 from my_portfolio_web_app.model.investment_account import (
-    InvestmentPortfolio,
     InvestmentIndividualAccount,
-)
-from my_portfolio_web_app.urls import transactions_urls
-from my_portfolio_web_app.views.views import (
-    StockView,
-    HomeView,
-    MyPortfolioDetailView,
-)
-from my_portfolio_web_app.views.import_views import (
-    ImportIOLOperationsView,
-    ImportGoogleSheetOperationsView,
+    InvestmentPortfolio,
 )
 from my_portfolio_web_app.views.financial_instrument_views import (
-    FinancialInstrumentListView,
     FinancialInstrumentCreateView,
-    FinancialInstrumentUpdateView,
     FinancialInstrumentDeleteView,
+    FinancialInstrumentListView,
+    FinancialInstrumentUpdateView,
+)
+from my_portfolio_web_app.views.import_views import (
+    ImportGoogleSheetOperationsView,
+    ImportIOLOperationsView,
 )
 from my_portfolio_web_app.views.investment_account_views import (
-    InvestmentAccountListView,
-    InvestmentAccountCreateView,
-    InvestmentAccountUpdateView,
-    InvestmentAccountDeleteView,
     AccountPerformanceView,
+    FinancialInstrumentPerformanceView,
+    InvestmentAccountCreateView,
+    InvestmentAccountDeleteView,
+    InvestmentAccountListView,
+    InvestmentAccountUpdateView,
+)
+from my_portfolio_web_app.views.views import (
+    HomeView,
+    MyPortfolioDetailView,
+    StockView,
 )
 
 app_name = 'my-portfolio'
@@ -94,5 +95,9 @@ urlpatterns = [
     path('account/<int:pk>/',
          AccountPerformanceView.as_view(model=InvestmentIndividualAccount),
          name='account_performance_view'),
-    *transactions_urls.paths
+    path('account/<int:pk>/<int:instrument_pk>/',
+         FinancialInstrumentPerformanceView.as_view(model=InvestmentIndividualAccount),
+         name='financial_instrument_performance_view'),
+    path('transactions/', include('my_portfolio_web_app.urls.transactions_urls'), name='transactions'),
+    path('users/', include('django.contrib.auth.urls')),
 ]
