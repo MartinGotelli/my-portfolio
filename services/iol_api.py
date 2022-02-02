@@ -55,9 +55,11 @@ class IOLAPI(metaclass=Singleton):
             self.user = user_configuration.iol_username
             self.password = user_configuration.iol_password
         else:
-            credentials_manager = CredentialsManager()
-            self.user = credentials_manager.iol_username()
-            self.password = credentials_manager.iol_password()
+            # credentials_manager = CredentialsManager()
+            # self.user = credentials_manager.iol_username()
+            # self.password = credentials_manager.iol_password()
+            self.user = 'none'
+            self.password = 'none'
 
     def requests(self):
         self.requests_count += 1
