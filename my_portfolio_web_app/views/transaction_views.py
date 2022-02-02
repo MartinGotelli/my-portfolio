@@ -58,7 +58,7 @@ class TransactionsListView(ListView, LoginRequiredView):
 
 class TransactionCreateView(MyPortfolioCreateView):
     template_name = 'my_portfolio/transaction_create_form.html'
-    success_url = '/my-portfolio/transactions/'
+    success_url = '/my-portfolio/transactions/transactions/'
 
     def get_context_data(self, **kwargs):
         context = super(TransactionCreateView, self).get_context_data(**kwargs)
@@ -85,8 +85,8 @@ class TransactionSelectionCreateView(TemplateView, LoginRequiredView):
 
 
 class TransactionUpdateView(MyPortfolioUpdateView):
-    success_url = '/my-portfolio/transactions/'
+    success_url = '/my-portfolio/transactions/transactions/'
 
 
 class TransactionDeleteView(MyPortfolioDeleteView):
-    success_url = '/my-portfolio/transactions/'
+    success_url = '/my-portfolio/transactions/transactions/'

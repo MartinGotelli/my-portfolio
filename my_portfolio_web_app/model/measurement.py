@@ -2,6 +2,14 @@ from copy import deepcopy
 from numbers import Number
 
 
+def _round(value, decimals):
+    if isinstance(value, Measurement) or isinstance(value, BagMeasurement):
+        return round(value, decimals)
+    else:
+        factor = 10 ** decimals
+        return int(round(value * factor)) / factor
+
+
 def as_measurement(number):
     if isinstance(number, Measurement) or isinstance(number, BagMeasurement):
         return number
@@ -31,15 +39,15 @@ def minimal_measurement_from(bag):
         return bag
 
 
-def measurements_from(object):
-    if isinstance(object, BagMeasurement):
-        return object.non_zero_measurements()
-    elif float(object) == 0:
+def measurements_from(element):
+    if isinstance(element, BagMeasurement):
+        return element.non_zero_measurements()
+    elif float(element) == 0:
         return []
-    elif isinstance(object, Measurement):
-        return [object]
+    elif isinstance(element, Measurement):
+        return [element]
     else:
-        return [Measurement(object, NullUnit())]
+        return [Measurement(element, NullUnit())]
 
 
 class BagMeasurement:
@@ -96,7 +104,7 @@ class BagMeasurement:
         return BagMeasurement([-measurement for measurement in self.measurements])
 
     def __round__(self, n=None):
-        return BagMeasurement([round(measurement, n) for measurement in self.measurements])
+        return BagMeasurement([_round(measurement, n) for measurement in self.measurements])
 
     def __eq__(self, other):
         measurements = self.non_zero_measurements()
@@ -105,7 +113,7 @@ class BagMeasurement:
         return (isinstance(other, self.__class__) and set(measurements) == set(
             other_measurements)) or (len(measurements) == 1 and measurements[0] == other) or (
                        not measurements and not other_measurements or (
-                       len(other_measurements) == 1 and other_measurements[0] == 0))
+                           len(other_measurements) == 1 and other_measurements[0] == 0))
 
     def __repr__(self):
         return ' + '.join(
@@ -264,7 +272,7 @@ class Measurement:
         return Measurement(-self.value(), self.unit)
 
     def __round__(self, n=None):
-        return Measurement(round(self.value(), n), self.unit)
+        return Measurement(_round(self.value(), n), self.unit)
 
     def __iter__(self):
         return iter(self.as_bag())

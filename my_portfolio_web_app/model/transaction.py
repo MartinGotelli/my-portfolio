@@ -1,27 +1,28 @@
 from abc import abstractmethod
 
 from django.db.models import (
+    CharField,
     DecimalField,
     ForeignKey,
-    CharField,
     PROTECT,
 )
 
 from my_portfolio_web_app.model.financial_instrument import (
+    Currency,
     FinancialInstrument,
     ars,
     usd,
-    Currency,
 )
 from my_portfolio_web_app.model.investment_account import InvestmentIndividualAccount
 from my_portfolio_web_app.model.measurement import (
     Measurement,
-    measurements_from,
     NullUnit,
+    _round,
+    measurements_from,
 )
 from my_portfolio_web_app.model.my_portfolio_model import (
-    MyPortfolioPolymorphicModel,
     CalendarDateField,
+    MyPortfolioPolymorphicModel,
 )
 
 PURCHASE = 'Compra'
@@ -86,7 +87,7 @@ class Transaction(MyPortfolioPolymorphicModel):
         pass
 
     def movements_on(self, date):
-        return round(-self.commissions() - self.gross_payment() + self.security_quantity_if_alive_on(date), 2)
+        return _round(-self.commissions() - self.gross_payment() + self.security_quantity_if_alive_on(date), 2)
 
     def monetary_movements_on(self, date):
         return sum([measurement for measurement in self.movements_on(date).as_bag().non_zero_measurements() if
@@ -125,7 +126,7 @@ class Transaction(MyPortfolioPolymorphicModel):
 
 class Trade(Transaction, MyPortfolioPolymorphicModel):
     def gross_payment(self):
-        return round(self.signed_security_quantity() * self.price(), 2)
+        return _round(self.signed_security_quantity() * self.price(), 2)
 
     def currency(self):
         return self.price().unit
@@ -194,7 +195,7 @@ class FinancialInstrumentTenderingPayment(Transaction, MyPortfolioPolymorphicMod
         return Measurement(self.signed_security_quantity(), self.financial_instrument)
 
     def movements_on(self, date):
-        return round(-self.commissions() + self.gross_payment(), 2)
+        return _round(-self.commissions() + self.gross_payment(), 2)
 
 
 class CouponClipping(FinancialInstrumentTenderingPayment):

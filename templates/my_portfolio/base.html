@@ -6,13 +6,17 @@
                 <a href="{% url menu_item.view_name %}">{{ menu_item.title }}</a>
             {% else %}
                 <div class="dropdown">
-                    <button class="dropbtn"
-                            {% if menu_item.view_name %}
-                            style="cursor: pointer" onclick="openLink('{% url menu_item.view_name %}')"
-                            {% endif %}>
-                        {{ menu_item.title }}
-                        <i class="fa fa-caret-down"></i>
-                    </button>
+                    {% if menu_item.view_name %}
+                        <a href="{% url menu_item.view_name %}" class="dropbtn">
+                            {{ menu_item.title }}
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    {% else %}
+                        <a class="dropbtn">
+                            {{ menu_item.title }}
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                    {% endif %}
                     <div class="dropdown-content">
                         {% for sub_item in menu_item.items %}
                             {{ sub_item.html | safe }}

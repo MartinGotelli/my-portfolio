@@ -3,19 +3,20 @@
 {% block title %}Operaciones de {{ account.description }}{% endblock %}
 
 {% block content %}
-    {% if transaction_list %}
-        <form name="type_form" action="{{ STATIC_URL }}">
-            <label for="id_type">Tipo</label>
-            {% with type=request.GET.type %}
-                <select name="type" id="id_type" onchange="type_form.submit();">
-                    <option value="">Todos</option>
-                    {% for selectable_type in types %}
-                        <option {% if selectable_type == type %}selected{% endif %}>{{ selectable_type }}</option>
-                    {% endfor %}
-                </select>
-            {% endwith %}
-        </form>
 
+    <form name="type_form" action="{{ STATIC_URL }}">
+        <label for="id_type">Tipo</label>
+        {% with type=request.GET.type %}
+            <select name="type" id="id_type" onchange="type_form.submit();">
+                <option value="">Todos</option>
+                {% for selectable_type in types %}
+                    <option {% if selectable_type == type %}selected{% endif %}>{{ selectable_type }}</option>
+                {% endfor %}
+            </select>
+        {% endwith %}
+    </form>
+
+    {% if transaction_list %}
         <table class="centered">
             <tr>
                 <th class="th">Fecha</th>

@@ -35,6 +35,12 @@ class NonClickableMenu(MenuBehavior):
     def __init__(self, title, menu_items=None, arguments=None):
         super(NonClickableMenu, self).__init__(view_name=None, title=title, menu_items=menu_items, arguments=arguments)
 
+    @property
+    def html(self):
+        title = f'<div class="dropdown-submenu"><a>{self.title}</a>'
+        submenus = f'<div class="subdropdown-content">{"".join([item.html for item in self.items])}</div></div>'
+        return title + '\n' + submenus
+
 
 class MenuItem(MenuBehavior):
     def __init__(self, view_name, title, prefix='my-portfolio:', arguments=None):
@@ -90,5 +96,11 @@ def menu_items(request):
             MenuItem('stock_view', 'Partidas'),
             NonClickableMenu('Importar', menu_items=[
                 MenuItem('import_iol_operations_view', 'InvertirOnline'),
-                MenuItem('import_sheet_operations_view', 'Google Sheets')]),
+                NonClickableMenu('Google Sheet', menu_items=[
+                    MenuItem('import_sheet_operations_view', 'Operaciones'),
+                    MenuItem('import_sheet_cash_flows_view', 'Ingresos/Egresos'),
+                ]),
+                # MenuItem('import_sheet_operations_view', 'Operaciones'),
+                # MenuItem('import_sheet_cash_flows_view', 'Ingresos/Egresos'),
+            ]),
         ]}

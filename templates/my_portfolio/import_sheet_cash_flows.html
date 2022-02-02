@@ -1,8 +1,8 @@
 {% extends 'my_portfolio/base.html' %}
-{% block title %}Importar Operaciones{% endblock %}
+{% block title %}Importar Ingresos/Egresos{% endblock %}
 
 {% block content %}
-    <form name="filter_form" action="">
+    <form action="">
         <div>
             <label for="id_from_date">Fecha Desde:</label>
             <input type="date" name="from_date" id="id_from_date" value="{{ request.GET.from_date }}">
@@ -11,7 +11,7 @@
             <label for="id_to_date">Fecha Hasta:</label>
             <input type="date" name="to_date" id="id_to_date" value="{{ request.GET.to_date }}">
         </div>
-        <div>
+         <div>
             {% with dont_filter=request.GET.all %}
                 <label>
                     No Filtrar
@@ -23,17 +23,14 @@
         <button class="primary" type="submit" style="position: absolute">Filtrar</button>
     </form>
 
-    {% if draft_operations %}
+    {% if draft_cash_flows %}
         <table class="centered">
             <tr>
                 <th class="th">Fecha</th>
                 <th class="th">Número</th>
                 <th class="th">Tipo</th>
-                <th class="th">Especie</th>
+                <th class="th">Moneda</th>
                 <th class="th">Cantidad</th>
-                <th class="th">Precio</th>
-                <th class="th">Monto $</th>
-                <th class="th">Monto U$D</th>
                 <th class="th">Acciones</th>
             </tr>
             <form action="" method="POST">
@@ -42,28 +39,25 @@
                     <button class="primary" type="submit">Agregar Todas</button>
                 </div>
             </form>
-            {% for operation in draft_operations %}
+            {% for cash_flow in draft_cash_flows %}
                 <tr>
-                    <td class="td">{{ operation.date_string }}</td>
-                    <td class="td">{{ operation.number }}</td>
-                    <td class="td">{{ operation.type }}</td>
-                    <td class="td">{{ operation.financial_instrument_code }}</td>
-                    <td class="num">{{ operation.security_quantity }}</td>
-                    <td class="num">{{ operation.price }}</td>
-                    <td class="num">{{ operation.ars_gross_payment }}</td>
-                    <td class="num">{{ operation.usd_gross_payment }}</td>
+                    <td class="td">{{ cash_flow.date_string }}</td>
+                    <td class="td">{{ cash_flow.number }}</td>
+                    <td class="td">{{ cash_flow.type }}</td>
+                    <td class="td">{{ cash_flow.financial_instrument_code }}</td>
+                    <td class="num">{{ cash_flow.security_quantity }}</td>
                     <td class="td">
                         <form target="_blank" method="POST"
-                              action="{% url 'my-portfolio:'|add:operation.operation_class.class_name|add:'_create' %}">
+                              action="{% url 'my-portfolio:'|add:cash_flow.operation_class.class_name|add:'_create' %}">
                             {% csrf_token %}
                             <input type="hidden" name="send" value="true"/>
-                            {{ operation.as_hidden }}
+                            {{ cash_flow.as_hidden }}
                             <a onclick="this.parentNode.submit();">Crear</a>
                         </form>
                         <form method="POST"
-                              action="{% url 'my-portfolio:'|add:operation.operation_class.class_name|add:'_create' %}">
+                              action="{% url 'my-portfolio:'|add:cash_flow.operation_class.class_name|add:'_create' %}">
                             {% csrf_token %}
-                            {{ operation.as_hidden }}
+                            {{ cash_flow.as_hidden }}
                             <a onclick="this.parentNode.submit();">Modificar</a>
                         </form>
                     </td>

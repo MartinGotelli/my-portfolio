@@ -8,9 +8,9 @@ from my_portfolio_web_app.model.financial_instrument import (
 )
 from my_portfolio_web_app.model.measurement import Measurement
 from my_portfolio_web_app.model.transaction import (
-    StockDividend,
     Purchase,
     Sale,
+    StockDividend,
     Transaction,
 )
 from services.credentials_manager import CredentialsManager
@@ -40,6 +40,12 @@ class IOLAPI(metaclass=Singleton):
 
     def __init__(self):
         self.set_user_and_password()
+
+    def should_retry(self, response):
+        if response.status_code == requests.codes.unauthorized:
+            self.token_for_refresh = None
+            self.refresh_token()
+        return response.status_code in [requests.codes.service_unavailable, requests.codes.unauthorized]
 
     def set_user_and_password(self):
         credentials_manager = CredentialsManager()
@@ -71,7 +77,7 @@ class IOLAPI(metaclass=Singleton):
         if response.status_code == requests.codes.ok:
             self.token = response.json()["access_token"]
             self.token_for_refresh = response.json()["refresh_token"]
-        elif response.status_code == requests.codes.service_unavailable and iteration < retry:
+        elif self.should_retry(response) and iteration < retry:
             self.refresh_token(iteration + 1)
         else:
             self.error(response)
@@ -85,7 +91,7 @@ class IOLAPI(metaclass=Singleton):
                                        headers=self.token_headers())
         if response.status_code == requests.codes.ok:
             return float(response.json()["ultimoPrecio"]) / financial_instrument.price_each_quantity
-        elif response.status_code == requests.codes.service_unavailable and iteration < retry:
+        elif self.should_retry(response) and iteration < retry:
             return self.price_for(financial_instrument, iteration + 1)
         else:
             self.error(response, financial_instrument.code)
@@ -97,12 +103,8 @@ class IOLAPI(metaclass=Singleton):
                                            'filtro.fechaHasta': to_date}, headers=self.token_headers())
         if response.status_code == requests.codes.ok:
             return self.operation_drafts_from(response.json())
-        elif response.status_code == requests.codes.service_unavailable and iteration < retry:
+        elif self.should_retry(response) and iteration < retry:
             return self.operations_from_to(from_date, to_date, iteration + 1)
-        elif response.status_code == requests.codes.unauthorized:
-            self.token_for_refresh = None
-            self.refresh_token()
-            return self.operations_from_to(from_date, to_date, iteration)
         else:
             self.error(response)
 

@@ -36,7 +36,7 @@
     margin: 0; /* Important for vertical align on mobile phones */
 }
 
-/* Add a red background color to navbar links on hover */
+/* Add a cyan background color to navbar links on hover */
 .navbar a:hover, .dropdown:hover .dropbtn {
     background-color: #097b8c;
     font-weight: bold;
@@ -45,6 +45,28 @@
 /* Dropdown content (hidden by default) */
 .dropdown-content {
     display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    margin-top: 46px;
+    /* top: 100%; */
+}
+
+/* Sub dropdown content (hidden by default) */
+.subdropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #ffffff;
+    min-width: 160px;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.1);
+    z-index: 1;
+    left: 100%;
+    top: 0;
+}
+
+.dropdown-submenu {
     position: absolute;
     background-color: #f9f9f9;
     min-width: 160px;
@@ -69,6 +91,11 @@
 
 /* Show the dropdown menu on hover */
 .dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* Show the dropdown menu on hover */
+.dropdown-submenu:hover .subdropdown-content {
     display: block;
 }
 

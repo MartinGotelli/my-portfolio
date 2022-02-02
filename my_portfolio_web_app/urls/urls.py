@@ -21,6 +21,7 @@ from my_portfolio_web_app.views.financial_instrument_views import (
     FinancialInstrumentUpdateView,
 )
 from my_portfolio_web_app.views.import_views import (
+    ImportGoogleSheetCashFlowsView,
     ImportGoogleSheetOperationsView,
     ImportIOLOperationsView,
 )
@@ -88,7 +89,10 @@ urlpatterns = [
          name='portfolio_delete'),
     path('stocks/', StockView.as_view(), name='stock_view'),
     path('import/IOL/', ImportIOLOperationsView.as_view(), name='import_iol_operations_view'),
-    path('import/google_sheet/', ImportGoogleSheetOperationsView.as_view(), name='import_sheet_operations_view'),
+    path('import/operations/google_sheet/', ImportGoogleSheetOperationsView.as_view(),
+         name='import_sheet_operations_view'),
+    path('import/cash_flows/google_sheet/', ImportGoogleSheetCashFlowsView.as_view(),
+         name='import_sheet_cash_flows_view'),
     path('portfolio/<int:pk>/',
          AccountPerformanceView.as_view(model=InvestmentPortfolio),
          name='portfolio_performance_view'),
