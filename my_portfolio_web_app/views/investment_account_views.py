@@ -104,7 +104,9 @@ class AccountPerformanceView(ListView, LoginRequiredView):
                 self.financial_instruments(),
                 self.currency(),
                 date.today(),
-                broker=self.broker()).instrument_performances()
+                broker=self.broker(),
+                user=self.request.user
+            ).instrument_performances()
             self.filtered_performances()
         return self._performances
 
@@ -173,6 +175,8 @@ class FinancialInstrumentPerformanceView(AccountPerformanceView):
                 self.financial_instruments(),
                 self.currency(),
                 date.today(),
-                broker=self.broker()).open_position_performances()
+                broker=self.broker(),
+                user=self.request.user
+            ).open_position_performances()
             self.filtered_performances()
         return self._performances

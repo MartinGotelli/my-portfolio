@@ -44,8 +44,11 @@ class ValuationSourceFromDictionary:
 class ValuationSourceFromIOLAPI:
     source = ValuationSourceFromDictionary()
 
-    def __init__(self, instruments_api=IOLAPI(), currencies_api=DolarSiAPI()):
-        self.instruments_api = instruments_api
+    def __init__(self, user, instruments_api=None, currencies_api=DolarSiAPI()):
+        if instruments_api:
+            self.instruments_api = instruments_api
+        else:
+            self.instruments_api = IOLAPI(user)
         self.currencies_api = currencies_api
 
     def api_for(self, instrument):
@@ -109,12 +112,15 @@ class CurrenciesValuationSource:
 class ValuationSourceFromGoogleSheet:
     source = ValuationSourceFromDictionary()
 
+    def __init__(self, user):
+        self.user = user
+
     def price_for_on(self, instrument, currency, date):
         try:
             price = self.source.price_for_on(instrument, currency, date)
             return price
         except ObjectNotFound:
-            price = Measurement(GoogleSheetAPI().price_for(instrument), currency)
+            price = Measurement(GoogleSheetAPI(self.user).price_for(instrument), currency)
             self.source.add_price_for_on(instrument, date, price)
             return price
 

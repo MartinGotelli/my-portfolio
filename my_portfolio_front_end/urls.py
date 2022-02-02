@@ -22,6 +22,7 @@ from django.urls import (
 from django.views.generic import RedirectView
 
 urlpatterns = [
+    path('', RedirectView.as_view(pattern_name='my-portfolio:index_view')),
     path('admin/', admin.site.urls),
     path('my-portfolio/', include('my_portfolio_web_app.urls.urls'), name="my-portfolio"),
     path('favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('my_portfolio/my_portfolio_logo.png'))),
