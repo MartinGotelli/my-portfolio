@@ -1,0 +1,1 @@
+web: gunicorn my-portfolio-front-end.wsgi
