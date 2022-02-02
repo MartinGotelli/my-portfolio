@@ -55,3 +55,12 @@ class UserIntegrationConfigurationForm(ModelForm):
         widgets = {
             'iol_password': PasswordInput(),
         }
+
+
+class UserIntegrationConfigurationUpdateForm(ModelForm):
+    class Meta:
+        model = UserIntegrationConfiguration
+        fields = ['iol_username', 'iol_password', 'google_sheet_id']
+        widgets = {
+            'iol_password': PasswordInput(),
+        }
