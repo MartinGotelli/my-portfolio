@@ -55,7 +55,7 @@ class CredentialsManager:
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'credentials.json', scopes)
-                credentials = flow.run_local_server(port=os.environ.get('PORT', 0))
+                credentials = flow.run_local_server(port=int(os.environ.get('PORT', '0')))
             # Save the credentials for the next run
             with open('token.json', 'w') as token:
                 token.write(credentials.to_json())
