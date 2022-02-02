@@ -25,6 +25,9 @@
                 </div>
             {% endif %}
         {% endfor %}
+        <div>
+            <a href="{% url 'my-portfolio:user_configuration_update' %}">{{ user.username }}</a>
+        </div>
     </div>
 {% endblock %}
 

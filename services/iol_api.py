@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import requests
+from django.contrib.auth.models import User
 
 from my_portfolio_web_app.model.financial_instrument import (
     Currency,
@@ -13,6 +14,7 @@ from my_portfolio_web_app.model.transaction import (
     StockDividend,
     Transaction,
 )
+from my_portfolio_web_app.model.user_integration_configuration import UserIntegrationConfiguration
 from services.credentials_manager import CredentialsManager
 
 retry = 10
@@ -38,8 +40,8 @@ class IOLAPI(metaclass=Singleton):
     user = None
     password = None
 
-    def __init__(self):
-        self.set_user_and_password()
+    def __init__(self, user: User = None):
+        self.set_user_and_password(user)
 
     def should_retry(self, response):
         if response.status_code == requests.codes.unauthorized:
@@ -47,10 +49,15 @@ class IOLAPI(metaclass=Singleton):
             self.refresh_token()
         return response.status_code in [requests.codes.service_unavailable, requests.codes.unauthorized]
 
-    def set_user_and_password(self):
-        credentials_manager = CredentialsManager()
-        self.user = credentials_manager.iol_username()
-        self.password = credentials_manager.iol_password()
+    def set_user_and_password(self, user):
+        if user:
+            user_configuration = UserIntegrationConfiguration.objects.get(user=user)  # TODO: Error handling
+            self.user = user_configuration.iol_username
+            self.password = user_configuration.iol_password
+        else:
+            credentials_manager = CredentialsManager()
+            self.user = credentials_manager.iol_username()
+            self.password = credentials_manager.iol_password()
 
     def requests(self):
         self.requests_count += 1

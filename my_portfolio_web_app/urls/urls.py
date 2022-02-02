@@ -14,6 +14,7 @@ from my_portfolio_web_app.model.investment_account import (
     InvestmentIndividualAccount,
     InvestmentPortfolio,
 )
+from my_portfolio_web_app.model.user_integration_configuration import UserIntegrationConfiguration
 from my_portfolio_web_app.views.financial_instrument_views import (
     FinancialInstrumentCreateView,
     FinancialInstrumentDeleteView,
@@ -33,6 +34,7 @@ from my_portfolio_web_app.views.investment_account_views import (
     InvestmentAccountListView,
     InvestmentAccountUpdateView,
 )
+from my_portfolio_web_app.views.user_views import UserIntegrationConfigurationUpdateView
 from my_portfolio_web_app.views.views import (
     HomeView,
     MyPortfolioDetailView,
@@ -72,18 +74,18 @@ urlpatterns = [
     path('accounts/portfolio/<int:pk>/',
          MyPortfolioDetailView.as_view(model=InvestmentPortfolio, fields=['description', 'individual_accounts']),
          name='portfolio_detail'),
-    path('accounts/add/account/', InvestmentAccountCreateView.as_view(model=InvestmentIndividualAccount),
-         name='account_create'),
+    path('accounts/add/account/', InvestmentAccountCreateView.as_view(
+        model=InvestmentIndividualAccount, fields=['description', 'authorized_users']), name='account_create'),
     path('accounts/add/portfolio/',
          InvestmentAccountCreateView.as_view(model=InvestmentPortfolio, fields=['description', 'individual_accounts']),
          name='portfolio_create'),
-    path('accounts/edit/account/<int:pk>/', InvestmentAccountUpdateView.as_view(model=InvestmentIndividualAccount),
-         name='account_update'),
+    path('accounts/edit/account/<int:pk>/', InvestmentAccountUpdateView.as_view(
+        model=InvestmentIndividualAccount, fields=['description', 'authorized_users']), name='account_update'),
     path('accounts/edit/portfolio/<int:pk>/',
          InvestmentAccountUpdateView.as_view(model=InvestmentPortfolio, fields=['description', 'individual_accounts']),
          name='portfolio_update'),
-    path('accounts/delete/account/<int:pk>/', InvestmentAccountDeleteView.as_view(model=InvestmentIndividualAccount),
-         name='account_delete'),
+    path('accounts/delete/account/<int:pk>/', InvestmentAccountDeleteView.as_view(
+        model=InvestmentIndividualAccount, fields=['description', 'authorized_users']), name='account_delete'),
     path('accounts/delete/portfolio/<int:pk>/',
          InvestmentAccountDeleteView.as_view(model=InvestmentPortfolio, fields=['description', 'individual_accounts']),
          name='portfolio_delete'),
@@ -104,4 +106,6 @@ urlpatterns = [
          name='financial_instrument_performance_view'),
     path('transactions/', include('my_portfolio_web_app.urls.transactions_urls'), name='transactions'),
     path('users/', include('django.contrib.auth.urls')),
+    path('user/configuration/', UserIntegrationConfigurationUpdateView.as_view(model=UserIntegrationConfiguration),
+         name='user_configuration_update')
 ]

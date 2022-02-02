@@ -1,8 +1,7 @@
 from datetime import date
 
-from django.views.generic import (
-    ListView,
-)
+from django.urls import reverse_lazy
+from django.views.generic import ListView
 
 from my_portfolio_web_app.model.financial_instrument import (
     Currency,
@@ -33,8 +32,8 @@ class InvestmentAccountListView(ListView, LoginRequiredView):
                 not self.type() or account.class_name() == self.type()]
 
     def get_queryset(self):
-        individual_accounts = list(InvestmentIndividualAccount.objects.all())
-        portfolios = list(InvestmentPortfolio.objects.all())
+        individual_accounts = list(InvestmentIndividualAccount.by_user(self.request.user))
+        portfolios = list(InvestmentPortfolio.by_user(self.request.user))
         return self.filter(individual_accounts + portfolios)
 
     def get_context_data(self, **kwargs):
@@ -45,15 +44,15 @@ class InvestmentAccountListView(ListView, LoginRequiredView):
 
 class InvestmentAccountCreateView(MyPortfolioCreateView):
     template_name = 'my_portfolio/account_create_form.html'
-    success_url = '/my-portfolio/accounts/'
+    success_url = reverse_lazy('investment_account_list')
 
 
 class InvestmentAccountUpdateView(MyPortfolioUpdateView):
-    success_url = '/my-portfolio/accounts/'
+    success_url = reverse_lazy('investment_account_list')
 
 
 class InvestmentAccountDeleteView(MyPortfolioDeleteView):
-    success_url = '/my-portfolio/accounts/'
+    success_url = reverse_lazy('investment_account_list')
 
 
 class AccountPerformanceView(ListView, LoginRequiredView):

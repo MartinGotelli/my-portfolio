@@ -2,6 +2,7 @@ from datetime import (
     datetime,
 )
 
+from django.contrib.auth.models import User
 from django.utils.safestring import SafeString
 from googleapiclient.discovery import build
 
@@ -22,15 +23,16 @@ from my_portfolio_web_app.model.transaction import (
     StockDividend,
     Transaction,
 )
+from my_portfolio_web_app.model.user_integration_configuration import UserIntegrationConfiguration
 from services.credentials_manager import CredentialsManager
 
 PRICES_RANGE = 'Cotizaciones!A1:B'
 OPERATIONS_RANGE = 'Transacciones!A1:Z'
 CASH_FLOWS_RANGE = 'Depositos!A1:H'
+
+
 # SHEET_ID = '1oaDgLdxTyQJN6k-gcNNBBF7T-qyTQY6fZ1f09d0e7AI'  # Michu
-
-
-SHEET_ID = '1gmEHxkISBwkbGHWfd4M2x-P910kQNy2kajGegIp9kmw'  # Martín
+# SHEET_ID = '1gmEHxkISBwkbGHWfd4M2x-P910kQNy2kajGegIp9kmw'  # Martín
 
 
 def as_float(string):
@@ -48,6 +50,12 @@ def as_float(string):
 class GoogleSheetAPI:
     prices_by_code_cache = {}
 
+    def __init__(self, user: User = None):
+        if user:
+            self.sheet_id = UserIntegrationConfiguration.objects.get(user=user).google_sheet_id  # TODO: Error handling
+        else:
+            self.sheet_id = '1gmEHxkISBwkbGHWfd4M2x-P910kQNy2kajGegIp9kmw'  # Martín
+
     @staticmethod
     def get_credentials():
         return CredentialsManager().google_credentials()
@@ -57,7 +65,7 @@ class GoogleSheetAPI:
 
         # Call the Sheets API
         sheet = service.spreadsheets()
-        result = sheet.values().get(spreadsheetId=SHEET_ID,
+        result = sheet.values().get(spreadsheetId=self.sheet_id,
                                     range=range).execute()
 
         return result.get('values', [])

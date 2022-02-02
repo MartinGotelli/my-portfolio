@@ -21,7 +21,7 @@ class ImportIOLOperationsView(ListView, LoginRequiredView):
         if not self.from_date() or not self.to_date():
             return []
         else:
-            operations = IOLAPI().operations_from_to(self.from_date(), self.to_date())
+            operations = IOLAPI(self.request.user).operations_from_to(self.from_date(), self.to_date())
             # operations.sort(key=lambda draft: draft.date())
 
             return operations
@@ -44,7 +44,7 @@ class ImportGoogleSheetOperationsView(ListView, LoginRequiredView):
         if (not self.from_date() or not self.to_date()) and not self.without_filter():
             return []
         else:
-            operations = GoogleSheetAPI().operations_from_to(self.from_date(), self.to_date(), self.without_filter())
+            operations = GoogleSheetAPI(self.request.user).operations_from_to(self.from_date(), self.to_date(), self.without_filter())
             # operations.sort(key=lambda draft: draft.date())
 
             return operations
@@ -73,7 +73,7 @@ class ImportGoogleSheetCashFlowsView(ListView, LoginRequiredView):
         if (not self.from_date() or not self.to_date()) and not self.without_filter():
             return []
         else:
-            operations = GoogleSheetAPI().cash_flows_from_to(self.from_date(), self.to_date(), self.without_filter())
+            operations = GoogleSheetAPI(self.request.user).cash_flows_from_to(self.from_date(), self.to_date(), self.without_filter())
 
             return operations
 

@@ -1,4 +1,10 @@
-from django.forms import HiddenInput
+from django.forms import (
+    HiddenInput,
+    ModelForm,
+    PasswordInput,
+)
+
+from my_portfolio_web_app.model.user_integration_configuration import UserIntegrationConfiguration
 
 
 class MyPortfolioFormWrapper:
@@ -40,3 +46,12 @@ class MyPortfolioFormWrapper:
         self.form.fields = original_fields
 
         return output
+
+
+class UserIntegrationConfigurationForm(ModelForm):
+    class Meta:
+        model = UserIntegrationConfiguration
+        fields = ['user', 'iol_username', 'iol_password', 'google_sheet_id']
+        widgets = {
+            'iol_password': PasswordInput(),
+        }

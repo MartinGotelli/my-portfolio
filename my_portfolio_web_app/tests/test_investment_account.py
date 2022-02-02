@@ -1,5 +1,6 @@
 import datetime
 
+from django.contrib.auth.models import User
 from django.test import TestCase
 
 from my_portfolio_web_app.model.investment_account import (
@@ -16,8 +17,11 @@ class TestInvestmentAccount(TestCase):
 
     def setUp(self):
         super().setUp()
-        InvestmentIndividualAccount.objects.create(description="Martín")
-        InvestmentIndividualAccount.objects.create(description="Pablo")
+        mock_user = User.objects.create(username='mock')
+        martin_account = InvestmentIndividualAccount.objects.create(description="Martín")
+        martin_account.authorized_users.add(mock_user)
+        pablo_account = InvestmentIndividualAccount.objects.create(description="Pablo")
+        pablo_account.authorized_users.add(mock_user)
 
     @staticmethod
     def account():
@@ -27,6 +31,10 @@ class TestInvestmentAccount(TestCase):
     def another_account():
         return InvestmentIndividualAccount.objects.get(description='Pablo')
 
+    @staticmethod
+    def mock_user():
+        return User.objects.get(username='mock')
+
 
 class TestInvestmentIndividualAccount(TestInvestmentAccount):
     def test_creation(self):
@@ -34,6 +42,25 @@ class TestInvestmentIndividualAccount(TestInvestmentAccount):
 
     def test_accounts(self):
         self.assertEquals(self.account().accounts(), [self.account()])
+
+    def test_by_user(self):
+        self.assertEquals(InvestmentIndividualAccount.by_user(self.mock_user()),
+                          [self.account(), self.another_account()])
+        self.assertEquals(InvestmentIndividualAccount.by_user(self.mock_user()),
+                          list(InvestmentIndividualAccount.objects.all()))
+
+        another_user = User.objects.create(username='other')
+        self.assertEquals(InvestmentIndividualAccount.by_user(self.mock_user()),
+                          [self.account(), self.another_account()])
+        self.assertEquals(InvestmentIndividualAccount.by_user(another_user), [])
+
+        yet_another_account = InvestmentIndividualAccount.objects.create(description="Yetti")
+        self.assertEquals(list(InvestmentIndividualAccount.objects.all()),
+                          [self.account(), self.another_account(), yet_another_account])
+        self.assertEquals(InvestmentIndividualAccount.by_user(another_user), [])
+
+        yet_another_account.authorized_users.add(another_user)
+        self.assertEquals(InvestmentIndividualAccount.by_user(another_user), [yet_another_account])
 
 
 class TestInvestmentPortfolio(TestInvestmentAccount):
