@@ -3,9 +3,9 @@ import os
 
 from cryptography.fernet import Fernet
 from google.auth.exceptions import RefreshError
-from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 
 FERNET_INI = 'fernet_key.ini'
 IOL_INI = 'IOL_credentials.ini'
@@ -53,8 +53,8 @@ class CredentialsManager:
                     os.remove('token.json')
                     return self.get_google_credentials()
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    'credentials.json', scopes)
+                flow = InstalledAppFlow.from_client_secrets_file('credentials.json', scopes)
+                flow.redirect_uri = 'https://localhost'
                 credentials = flow.run_local_server(port=0)
             # Save the credentials for the next run
             with open('token.json', 'w') as token:
