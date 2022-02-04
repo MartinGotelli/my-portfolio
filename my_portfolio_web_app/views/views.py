@@ -21,6 +21,7 @@ from django.views.generic import (
     UpdateView,
 )
 from django.views.generic.edit import ModelFormMixin
+from django_heroku import logger
 from google_auth_oauthlib.flow import Flow
 
 from my_portfolio_web_app.forms import MyPortfolioFormWrapper
@@ -131,7 +132,8 @@ class GoogleCredentialsRequiredView:
         scopes = ['https://www.googleapis.com/auth/spreadsheets.readonly']
         flow = Flow.from_client_secrets_file('credentials.json', scopes)
         flow.redirect_uri = request.build_absolute_uri(reverse('my-portfolio:oauth_callback'))
-        authorization_url, state = flow.authorization_url(access_type='offline', include_granted_scope='true')
+        authorization_url, state = flow.authorization_url(access_type='offline', include_granted_scope='true',
+                                                          prompt='consent')
 
         request.session['next_view'] = request.get_full_path()
 
@@ -147,7 +149,7 @@ def google_oauth_callback(request):
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
     flow.fetch_token(authorization_response=authorization_response)
     credentials = flow.credentials
-    print(credentials_to_dict(credentials))
+    logger.log(credentials_to_dict(credentials))
     request.session['google_credentials'] = credentials_to_dict(credentials)
 
     return redirect(get_next_view(request))
