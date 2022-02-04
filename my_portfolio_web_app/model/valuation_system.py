@@ -112,15 +112,15 @@ class CurrenciesValuationSource:
 class ValuationSourceFromGoogleSheet:
     source = ValuationSourceFromDictionary()
 
-    def __init__(self, user):
-        self.user = user
+    def __init__(self, request):
+        self.request = request
 
     def price_for_on(self, instrument, currency, date):
         try:
             price = self.source.price_for_on(instrument, currency, date)
             return price
         except ObjectNotFound:
-            price = Measurement(GoogleSheetAPI(self.user).price_for(instrument), currency)
+            price = Measurement(GoogleSheetAPI(self.request).price_for(instrument), currency)
             self.source.add_price_for_on(instrument, date, price)
             return price
 

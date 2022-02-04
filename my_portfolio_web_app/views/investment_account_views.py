@@ -13,6 +13,7 @@ from my_portfolio_web_app.model.investment_account import (
 )
 from my_portfolio_web_app.model.stock_system import InvestmentPerformanceCalculator
 from my_portfolio_web_app.views.views import (
+    GoogleCredentialsRequiredView,
     LoginRequiredView,
     MyPortfolioCreateView,
     MyPortfolioDeleteView,
@@ -55,7 +56,7 @@ class InvestmentAccountDeleteView(MyPortfolioDeleteView):
     success_url = reverse_lazy('investment_account_list')
 
 
-class AccountPerformanceView(ListView, LoginRequiredView):
+class AccountPerformanceView(GoogleCredentialsRequiredView, ListView, LoginRequiredView):
     template_name = "my_portfolio/account_performance_view.html"
     context_object_name = "investment_performance_list"
 
@@ -105,7 +106,7 @@ class AccountPerformanceView(ListView, LoginRequiredView):
                 self.currency(),
                 date.today(),
                 broker=self.broker(),
-                user=self.request.user
+                request=self.request
             ).instrument_performances()
             self.filtered_performances()
         return self._performances
@@ -176,7 +177,7 @@ class FinancialInstrumentPerformanceView(AccountPerformanceView):
                 self.currency(),
                 date.today(),
                 broker=self.broker(),
-                user=self.request.user
+                request=self.request
             ).open_position_performances()
             self.filtered_performances()
         return self._performances

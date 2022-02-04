@@ -118,7 +118,6 @@ class MyPortfolioDeleteView(MyPortfolioAsFormView, FormWrappingView, ModelFormMi
 class GoogleCredentialsRequiredView:
 
     def dispatch(self, request, *args, **kwargs):
-        print('Mixin!')
         if not request.session.get('google_credentials'):
             return self.request_authorization(request)
         return super().dispatch(request, *args, **kwargs)
@@ -128,13 +127,13 @@ class GoogleCredentialsRequiredView:
         scopes = ['https://www.googleapis.com/auth/spreadsheets.readonly']
         flow = Flow.from_client_secrets_file('credentials.json', scopes)
         flow.redirect_uri = request.build_absolute_uri(reverse('my-portfolio:oauth_callback'))
-        authorization_url, state = flow.authorization_url(acces_type='offline', include_granted_scope='true')
+        authorization_url, state = flow.authorization_url(access_type='offline', include_granted_scope='true')
 
-        print(f'State: {state}')
-        return redirect(authorization_url)
+        return redirect(authorization_url, next=request.get_full_path())
 
 
 def google_oauth_callback(request):
+    next_view = request.GET.get('next')
     scopes = ['https://www.googleapis.com/auth/spreadsheets.readonly']
     flow = Flow.from_client_secrets_file('credentials.json', scopes)
     flow.redirect_uri = request.build_absolute_uri(reverse('my-portfolio:oauth_callback'))
@@ -143,10 +142,9 @@ def google_oauth_callback(request):
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
     flow.fetch_token(authorization_response=authorization_response)
     credentials = flow.credentials
-    print(credentials)
     request.session['google_credentials'] = credentials_to_dict(credentials)
 
-    return redirect('my-portfolio:index_view')
+    return redirect(next_view)
 
 
 def credentials_to_dict(credentials):

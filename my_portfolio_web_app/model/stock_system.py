@@ -417,7 +417,7 @@ class InvestmentPerformance:
 
 
 class InvestmentPerformanceCalculator:
-    def __init__(self, account, financial_instruments, currency, date, user, broker=None):
+    def __init__(self, account, financial_instruments, currency, date, request, broker=None):
         self.account = account
         self.transaction_manager = TransactionManager(account)
         self.financial_instruments = financial_instruments
@@ -425,8 +425,8 @@ class InvestmentPerformanceCalculator:
         self.date = date
         self.broker = broker
         self.valuation_system = ValuationSystem(
-            ValuationByBruteForce(
-                [CurrenciesValuationSource(), ValuationSourceFromGoogleSheet(user), ValuationSourceFromIOLAPI(user)]))
+            ValuationByBruteForce([CurrenciesValuationSource(), ValuationSourceFromGoogleSheet(request),
+                                   ValuationSourceFromIOLAPI(request.user)]))
         self._stock_system = None
 
     def stock_system(self):
