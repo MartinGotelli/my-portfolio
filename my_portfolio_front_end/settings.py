@@ -124,6 +124,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 LOGIN_REDIRECT_URL = '/my-portfolio'
+LOGIN_URL = '/my-portfolio/users/login'
 
 django_heroku.settings(locals())
 

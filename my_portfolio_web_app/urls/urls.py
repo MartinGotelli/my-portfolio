@@ -39,6 +39,7 @@ from my_portfolio_web_app.views.views import (
     HomeView,
     MyPortfolioDetailView,
     StockView,
+    google_oauth_callback,
 )
 
 app_name = 'my-portfolio'
@@ -107,5 +108,6 @@ urlpatterns = [
     path('transactions/', include('my_portfolio_web_app.urls.transactions_urls'), name='transactions'),
     path('users/', include('django.contrib.auth.urls')),
     path('user/configuration/', UserIntegrationConfigurationUpdateView.as_view(model=UserIntegrationConfiguration),
-         name='user_configuration_update')
+         name='user_configuration_update'),
+    path('oauth/callback/', google_oauth_callback, name='oauth_callback'),
 ]

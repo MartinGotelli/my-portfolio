@@ -2,8 +2,8 @@ from datetime import (
     datetime,
 )
 
-from django.contrib.auth.models import User
 from django.utils.safestring import SafeString
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 from my_portfolio_web_app.model.financial_instrument import (
@@ -24,7 +24,6 @@ from my_portfolio_web_app.model.transaction import (
     Transaction,
 )
 from my_portfolio_web_app.model.user_integration_configuration import UserIntegrationConfiguration
-from services.credentials_manager import CredentialsManager
 
 PRICES_RANGE = 'Cotizaciones!A1:B'
 OPERATIONS_RANGE = 'Transacciones!A1:Z'
@@ -50,18 +49,16 @@ def as_float(string):
 class GoogleSheetAPI:
     prices_by_code_cache = {}
 
-    def __init__(self, user: User = None):
-        if user:
-            self.sheet_id = UserIntegrationConfiguration.objects.get(user=user).google_sheet_id  # TODO: Error handling
+    def __init__(self, request):
+        if request.user:
+            # TODO: Error handling
+            self.sheet_id = UserIntegrationConfiguration.objects.get(user=request.user).google_sheet_id
         else:
             self.sheet_id = '1gmEHxkISBwkbGHWfd4M2x-P910kQNy2kajGegIp9kmw'  # Martín
-
-    @staticmethod
-    def get_credentials():
-        return CredentialsManager().google_credentials()
+        self.credentials = Credentials.from_authorized_user_info(request.session.get('google_credentials'))
 
     def get_values_from_sheet(self, range):
-        service = build('sheets', 'v4', credentials=self.get_credentials())
+        service = build('sheets', 'v4', credentials=self.credentials)
 
         # Call the Sheets API
         sheet = service.spreadsheets()
@@ -90,7 +87,8 @@ class GoogleSheetAPI:
     def price_for(self, instrument):
         return self.prices_by_code().get(instrument.code, 0)
 
-    def as_operation_data(self, row, header_row):
+    @staticmethod
+    def as_operation_data(row, header_row):
         return {header: row_value for row_value, header in zip(row, header_row)}
 
     def transactions_from_to(self, sheet_range, draft_class, from_date_string, to_date_string, without_filter=False):

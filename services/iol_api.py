@@ -15,18 +15,8 @@ from my_portfolio_web_app.model.transaction import (
     Transaction,
 )
 from my_portfolio_web_app.model.user_integration_configuration import UserIntegrationConfiguration
-from services.credentials_manager import CredentialsManager
 
 retry = 10
-
-
-class Singleton(type):
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
 
 
 def endpoint(operation):

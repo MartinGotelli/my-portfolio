@@ -2,7 +2,10 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import ListView
 
-from my_portfolio_web_app.views.views import LoginRequiredView
+from my_portfolio_web_app.views.views import (
+    GoogleCredentialsRequiredView,
+    LoginRequiredView,
+)
 from services.google_sheet_api import GoogleSheetAPI
 from services.iol_api import IOLAPI
 
@@ -27,7 +30,7 @@ class ImportIOLOperationsView(ListView, LoginRequiredView):
             return operations
 
 
-class ImportGoogleSheetOperationsView(ListView, LoginRequiredView):
+class ImportGoogleSheetOperationsView(GoogleCredentialsRequiredView, ListView, LoginRequiredView):
     template_name = 'my_portfolio/import_sheet_operations.html'
     context_object_name = 'draft_operations'
 
@@ -44,7 +47,7 @@ class ImportGoogleSheetOperationsView(ListView, LoginRequiredView):
         if (not self.from_date() or not self.to_date()) and not self.without_filter():
             return []
         else:
-            operations = GoogleSheetAPI(self.request.user).operations_from_to(self.from_date(), self.to_date(), self.without_filter())
+            operations = GoogleSheetAPI(self.request).operations_from_to(self.from_date(), self.to_date(), self.without_filter())
             # operations.sort(key=lambda draft: draft.date())
 
             return operations
@@ -73,7 +76,7 @@ class ImportGoogleSheetCashFlowsView(ListView, LoginRequiredView):
         if (not self.from_date() or not self.to_date()) and not self.without_filter():
             return []
         else:
-            operations = GoogleSheetAPI(self.request.user).cash_flows_from_to(self.from_date(), self.to_date(), self.without_filter())
+            operations = GoogleSheetAPI(self.request).cash_flows_from_to(self.from_date(), self.to_date(), self.without_filter())
 
             return operations
 

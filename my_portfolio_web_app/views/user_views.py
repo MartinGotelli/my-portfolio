@@ -9,7 +9,7 @@ from my_portfolio_web_app.views.views import (
 
 
 class UserIntegrationConfigurationUpdateView(FormWrappingView, UpdateView, LoginRequiredView):
-    success_url = reverse_lazy('index_view')
+    success_url = reverse_lazy('my-portfolio:index_view')
     form_class = UserIntegrationConfigurationUpdateForm
     template_name = 'my_portfolio/generic_update_form.html'
 

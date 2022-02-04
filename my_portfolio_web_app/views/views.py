@@ -1,14 +1,16 @@
+import os
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import (
-    ProtectedError,
-)
+from django.db.models import ProtectedError
 from django.forms import Form
 from django.forms.utils import ErrorDict
-from django.http import (
-    HttpResponseRedirect,
+from django.http import HttpResponseRedirect
+from django.shortcuts import (
+    redirect,
+    render,
 )
-from django.shortcuts import render
+from django.urls import reverse
 from django.utils.decorators import classonlymethod
 from django.views import View
 from django.views.generic import (
@@ -19,16 +21,11 @@ from django.views.generic import (
     UpdateView,
 )
 from django.views.generic.edit import ModelFormMixin
+from google_auth_oauthlib.flow import Flow
 
-from my_portfolio_web_app.forms import (
-    MyPortfolioFormWrapper,
-)
-from my_portfolio_web_app.model.stock_system import (
-    OpenPositionCreator,
-)
-from my_portfolio_web_app.model.transaction import (
-    Transaction,
-)
+from my_portfolio_web_app.forms import MyPortfolioFormWrapper
+from my_portfolio_web_app.model.stock_system import OpenPositionCreator
+from my_portfolio_web_app.model.transaction import Transaction
 
 
 class LoginRequiredView(View):
@@ -37,7 +34,7 @@ class LoginRequiredView(View):
         return login_required(super().as_view(**initkwargs), login_url='/my-portfolio/users/login')
 
 
-class HomeView(LoginRequiredView):
+class HomeView(LoginRequiredView, View):
     template_name = 'my_portfolio/home_view.html'
 
     def get(self, request, *args, **kwargs):
@@ -116,3 +113,47 @@ class MyPortfolioDeleteView(MyPortfolioAsFormView, FormWrappingView, ModelFormMi
         except ProtectedError:
             messages.add_message(request, messages.ERROR, 'This object is referenced by other object in the system')
             return HttpResponseRedirect(self.request.path_info)
+
+
+class GoogleCredentialsRequiredView:
+
+    def dispatch(self, request, *args, **kwargs):
+        print('Mixin!')
+        if not request.session.get('google_credentials'):
+            return self.request_authorization(request)
+        return super().dispatch(request, *args, **kwargs)
+
+    @staticmethod
+    def request_authorization(request):
+        scopes = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+        flow = Flow.from_client_secrets_file('credentials.json', scopes)
+        flow.redirect_uri = request.build_absolute_uri(reverse('my-portfolio:oauth_callback'))
+        authorization_url, state = flow.authorization_url(acces_type='offline', include_granted_scope='true')
+
+        print(f'State: {state}')
+        return redirect(authorization_url)
+
+
+def google_oauth_callback(request):
+    scopes = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+    flow = Flow.from_client_secrets_file('credentials.json', scopes)
+    flow.redirect_uri = request.build_absolute_uri(reverse('my-portfolio:oauth_callback'))
+    authorization_response = request.get_full_path()
+    # To use in testing define the environment variable OAUTHLIB_INSECURE_TRANSPORT
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
+    flow.fetch_token(authorization_response=authorization_response)
+    credentials = flow.credentials
+    print(credentials)
+    request.session['google_credentials'] = credentials_to_dict(credentials)
+
+    return redirect('my-portfolio:index_view')
+
+
+def credentials_to_dict(credentials):
+    return {
+        'token': credentials.token,
+        'refresh_token': credentials.refresh_token,
+        'token_uri': credentials.token_uri,
+        'client_id': credentials.client_id,
+        'client_secret': credentials.client_secret,
+        'scopes': credentials.scopes}
