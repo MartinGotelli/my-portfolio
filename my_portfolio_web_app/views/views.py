@@ -28,6 +28,10 @@ from my_portfolio_web_app.model.stock_system import OpenPositionCreator
 from my_portfolio_web_app.model.transaction import Transaction
 
 
+def get_next_view(request):
+    return request.session.pop('next_view', 'my-potfolio:index_view')
+
+
 class LoginRequiredView(View):
     @classonlymethod
     def as_view(cls, **initkwargs):
@@ -129,11 +133,12 @@ class GoogleCredentialsRequiredView:
         flow.redirect_uri = request.build_absolute_uri(reverse('my-portfolio:oauth_callback'))
         authorization_url, state = flow.authorization_url(access_type='offline', include_granted_scope='true')
 
-        return redirect(authorization_url, next=request.get_full_path())
+        request.session['next_view'] = request.get_full_path()
+
+        return redirect(authorization_url)
 
 
 def google_oauth_callback(request):
-    next_view = request.GET.get('next')
     scopes = ['https://www.googleapis.com/auth/spreadsheets.readonly']
     flow = Flow.from_client_secrets_file('credentials.json', scopes)
     flow.redirect_uri = request.build_absolute_uri(reverse('my-portfolio:oauth_callback'))
@@ -144,7 +149,7 @@ def google_oauth_callback(request):
     credentials = flow.credentials
     request.session['google_credentials'] = credentials_to_dict(credentials)
 
-    return redirect(next_view)
+    return redirect(get_next_view(request))
 
 
 def credentials_to_dict(credentials):
