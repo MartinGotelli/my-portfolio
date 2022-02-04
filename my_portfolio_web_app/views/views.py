@@ -149,7 +149,7 @@ def google_oauth_callback(request):
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
     flow.fetch_token(authorization_response=authorization_response)
     credentials = flow.credentials
-    logger.log(credentials_to_dict(credentials))
+    #logger.log(credentials_to_dict(credentials))
     request.session['google_credentials'] = credentials_to_dict(credentials)
 
     return redirect(get_next_view(request))
