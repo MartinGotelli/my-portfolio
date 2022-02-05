@@ -179,10 +179,16 @@ class GoogleSheetOperationDraft:
 
     @staticmethod
     def ars():
+        currencies = Currency.objects.filter(code='$')
+        if not currencies:
+            return Currency.objects.create(code='$', description='Pesos')
         return Currency.objects.get(code='$')
 
     @staticmethod
     def usd():
+        currencies = Currency.objects.filter(code='USD')
+        if not currencies:
+            Currency.objects.create(code='USD', description='Dólares')
         return Currency.objects.get(code='USD')
 
     def is_payment(self):

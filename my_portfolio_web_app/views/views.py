@@ -21,7 +21,6 @@ from django.views.generic import (
     UpdateView,
 )
 from django.views.generic.edit import ModelFormMixin
-from django_heroku import logger
 from google_auth_oauthlib.flow import Flow
 
 from my_portfolio_web_app.forms import MyPortfolioFormWrapper
@@ -30,7 +29,7 @@ from my_portfolio_web_app.model.transaction import Transaction
 
 
 def get_next_view(request):
-    return request.session.pop('next_view', 'my-potfolio:index_view')
+    return request.session.pop('next_view', 'my-portfolio:index_view')
 
 
 class LoginRequiredView(View):
@@ -149,7 +148,6 @@ def google_oauth_callback(request):
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
     flow.fetch_token(authorization_response=authorization_response)
     credentials = flow.credentials
-    #logger.log(credentials_to_dict(credentials))
     request.session['google_credentials'] = credentials_to_dict(credentials)
 
     return redirect(get_next_view(request))
