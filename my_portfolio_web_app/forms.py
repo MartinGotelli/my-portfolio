@@ -1,4 +1,8 @@
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 from django.forms import (
+    CharField,
+    EmailField,
     HiddenInput,
     ModelForm,
     PasswordInput,
@@ -49,6 +53,11 @@ class MyPortfolioFormWrapper:
 
 
 class UserIntegrationConfigurationForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['user'].disabled = True
+
     class Meta:
         model = UserIntegrationConfiguration
         fields = ['user', 'iol_username', 'iol_password', 'google_sheet_id']
@@ -64,3 +73,25 @@ class UserIntegrationConfigurationUpdateForm(ModelForm):
         widgets = {
             'iol_password': PasswordInput(),
         }
+
+
+class UserCreateForm(UserCreationForm):
+    error_messages = {
+        'password_mismatch': 'Las contraseñas no coinciden',
+    }
+    password1 = CharField(
+        label="Contraseña",
+        widget=PasswordInput(attrs={'autocomplete': 'new-password'}),
+        help_text=False,
+    )
+    password2 = CharField(
+        label="Repetir Contraseña",
+        widget=PasswordInput(attrs={'autocomplete': 'new-password'}),
+        help_text=False,
+    )
+    email = EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password1', 'password2')
+        help_texts = {k: '' for k in fields}

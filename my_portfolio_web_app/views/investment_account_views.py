@@ -146,9 +146,12 @@ class AccountPerformanceView(GoogleCredentialsRequiredView, ListView, LoginRequi
 
     def total_performance_rate(self):
         total_investment = float(self.total_investment())
-        return sum(
-            [performance.performance_rate * float(performance.total_investment) / total_investment for performance in
-             self.performances()])
+        if total_investment:
+            return sum(
+                [performance.performance_rate * float(performance.total_investment) / total_investment for performance
+                 in self.performances()])
+        else:
+            return total_investment
 
     def get_context_data(self, **kwargs):
         context = super(AccountPerformanceView, self).get_context_data(**kwargs)

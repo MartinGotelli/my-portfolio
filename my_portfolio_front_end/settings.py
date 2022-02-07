@@ -125,6 +125,7 @@ STATIC_URL = '/static/'
 
 LOGIN_REDIRECT_URL = '/my-portfolio'
 LOGIN_URL = '/my-portfolio/users/login'
+LOGOUT_REDIRECT_URL = LOGIN_URL
 
 django_heroku.settings(locals())
 

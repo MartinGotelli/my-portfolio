@@ -23,7 +23,7 @@ def endpoint(operation):
     return "https://api.invertironline.com/" + operation
 
 
-class IOLAPI():
+class IOLAPI:
     token = None
     token_for_refresh = None
     requests_count = 0
@@ -40,17 +40,9 @@ class IOLAPI():
         return response.status_code in [requests.codes.service_unavailable, requests.codes.unauthorized]
 
     def set_user_and_password(self, request_user):
-        if request_user:
-            user_configuration = UserIntegrationConfiguration.objects.get(user=request_user)  # TODO: Error handling
-            self.user = user_configuration.iol_username
-            self.password = user_configuration.iol_password
-        else:
-            # credentials_manager = CredentialsManager()
-            # self.user = credentials_manager.iol_username()
-            # self.password = credentials_manager.iol_password()
-            print('Noneeeeeee')
-            self.user = 'none'
-            self.password = 'none'
+        user_configuration = UserIntegrationConfiguration.objects.get(user=request_user)  # TODO: Error handling
+        self.user = user_configuration.iol_username
+        self.password = user_configuration.iol_password
 
     def requests(self):
         if not self.user or not self.password:

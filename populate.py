@@ -42,7 +42,7 @@ def usd(amount):
 
 
 def create_admin():
-    User.objects.create_superuser('admin', 'admin@example.com', 'admin')
+    User.objects.create_superuser('admin', 'admin@example.com', 'SuperUser3,14')
 
 
 def create_transactions():

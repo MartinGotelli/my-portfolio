@@ -26,16 +26,14 @@
             {% endif %}
         {% endfor %}
         <div>
-            <a href="{% url 'my-portfolio:user_configuration_update' %}">{{ user.username }}</a>
+            <a href="{% url 'my-portfolio:logout' %}">Logout</a>
+        </div>
+        <div>
+            <a href="{% url 'my-portfolio:user_configuration' %}">{{ user.username }}</a>
         </div>
     </div>
 {% endblock %}
 
 {% block base_content %}
-    {% if user.is_authenticated %}
-        {% block content %}{{ block.super }}{% endblock %}
-    {% else %}
-        <p>You are not logged in</p>
-        <a href="{% url 'my-portfolio:login' %}">Log In</a>
-    {% endif %}
+    {% block content %}{{ block.super }}{% endblock %}
 {% endblock %}

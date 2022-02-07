@@ -59,7 +59,7 @@ class ImportGoogleSheetOperationsView(GoogleCredentialsRequiredView, ListView, L
         return HttpResponseRedirect(reverse('my-portfolio:all_transactions_list'))
 
 
-class ImportGoogleSheetCashFlowsView(ListView, LoginRequiredView):
+class ImportGoogleSheetCashFlowsView(GoogleCredentialsRequiredView, ListView, LoginRequiredView):
     template_name = 'my_portfolio/import_sheet_cash_flows.html'
     context_object_name = 'draft_cash_flows'
 

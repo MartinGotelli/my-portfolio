@@ -3,15 +3,14 @@
 {% block content %}
 
 {% if form.errors %}
-<p>Your username and password didn't match. Please try again.</p>
+<p>El nombre de usuario y la contraseña no coinciden. Por favor, intentar de nuevo.</p>
 {% endif %}
 
 {% if next %}
     {% if user.is_authenticated %}
-    <p>Your account doesn't have access to this page. To proceed,
-    please login with an account that has access.</p>
+    <p>Tu cuenta no tiene permisos para ver esta página, ingresá con una cuenta que los tenga.</p>
     {% else %}
-    <p>Please login to see this page.</p>
+    <p>Por favor, ingresá para ver esta página.</p>
     {% endif %}
 {% endif %}
 
@@ -32,6 +31,7 @@
 <input type="hidden" name="next" value="{{ next }}">
 </form>
 
-<p><a href="{% url 'my-portfolio:password_reset' %}">Lost password?</a></p>
+<p><a href="{% url 'my-portfolio:user_create' %}">Registrarse</a></p>
+<p><a href="{% url 'my-portfolio:password_reset' %}">Olvidé mi contraseña</a></p>
 
 {% endblock %}

@@ -14,7 +14,6 @@ from my_portfolio_web_app.model.investment_account import (
     InvestmentIndividualAccount,
     InvestmentPortfolio,
 )
-from my_portfolio_web_app.model.user_integration_configuration import UserIntegrationConfiguration
 from my_portfolio_web_app.views.financial_instrument_views import (
     FinancialInstrumentCreateView,
     FinancialInstrumentDeleteView,
@@ -34,7 +33,6 @@ from my_portfolio_web_app.views.investment_account_views import (
     InvestmentAccountListView,
     InvestmentAccountUpdateView,
 )
-from my_portfolio_web_app.views.user_views import UserIntegrationConfigurationUpdateView
 from my_portfolio_web_app.views.views import (
     HomeView,
     MyPortfolioDetailView,
@@ -106,8 +104,6 @@ urlpatterns = [
          FinancialInstrumentPerformanceView.as_view(model=InvestmentIndividualAccount),
          name='financial_instrument_performance_view'),
     path('transactions/', include('my_portfolio_web_app.urls.transactions_urls'), name='transactions'),
-    path('users/', include('django.contrib.auth.urls')),
-    path('user/configuration/', UserIntegrationConfigurationUpdateView.as_view(model=UserIntegrationConfiguration),
-         name='user_configuration_update'),
     path('oauth/callback/', google_oauth_callback, name='oauth_callback'),
+    path('users/', include('my_portfolio_web_app.urls.user_urls'), name='users'),
 ]

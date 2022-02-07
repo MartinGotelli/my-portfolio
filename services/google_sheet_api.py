@@ -50,11 +50,7 @@ class GoogleSheetAPI:
     prices_by_code_cache = {}
 
     def __init__(self, request):
-        if request.user:
-            # TODO: Error handling
-            self.sheet_id = UserIntegrationConfiguration.objects.get(user=request.user).google_sheet_id
-        else:
-            self.sheet_id = '1gmEHxkISBwkbGHWfd4M2x-P910kQNy2kajGegIp9kmw'  # Martín
+        self.sheet_id = UserIntegrationConfiguration.objects.get(user=request.user).google_sheet_id
         self.credentials = Credentials.from_authorized_user_info(request.session.get('google_credentials'))
 
     def get_values_from_sheet(self, range):
