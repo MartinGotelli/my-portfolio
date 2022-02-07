@@ -50,7 +50,8 @@ class GoogleSheetAPI:
     prices_by_code_cache = {}
 
     def __init__(self, request):
-        self.sheet_id = UserIntegrationConfiguration.objects.get(user=request.user).google_sheet_id
+        self.user = request.user
+        self.sheet_id = UserIntegrationConfiguration.objects.get(user=self.user).google_sheet_id
         self.credentials = Credentials.from_authorized_user_info(request.session.get('google_credentials'))
 
     def get_values_from_sheet(self, range):
@@ -101,7 +102,7 @@ class GoogleSheetAPI:
         for row in values:
             date = datetime.strptime(row[date_index], '%d/%m/%Y').date()
             if without_filter or from_date <= date <= to_date:
-                drafts.append(draft_class(self.as_operation_data(row, header_row)))
+                drafts.append(draft_class(self.as_operation_data(row, header_row), self.user))
 
         return drafts
 
@@ -126,7 +127,7 @@ OPERATION_CLASSES_BY_TYPE = {
 
 
 class GoogleSheetOperationDraft:
-    def __init__(self, row_data):
+    def __init__(self, row_data, user):
         self.number = row_data.get('Num') or 0
         self.type = row_data['Tipo']
         self.financial_instrument_code = row_data['Especie']
@@ -143,6 +144,7 @@ class GoogleSheetOperationDraft:
         self.ars_commissions = round(as_float(row_data['Comisión']) + as_float(row_data['Derechos']), 2)
         self.usd_commissions = round(as_float(row_data['Comisión U$D']), 2)
         self.account_name = row_data['Cuenta']
+        self.user = user
 
     def create(self):
         kwargs = {
@@ -233,10 +235,7 @@ class GoogleSheetOperationDraft:
             return Measurement(self.usd_price_amount, self.currency())
 
     def account(self):
-        accounts_by_name = InvestmentIndividualAccount.objects.filter(description=self.account_name)
-        if len(accounts_by_name) == 0:
-            InvestmentIndividualAccount.objects.create(description=self.account_name)
-        return InvestmentIndividualAccount.objects.get(description=self.account_name)
+        return get_or_create_account(self.account_name, self.user)
 
     def operation_class(self):
         return OPERATION_CLASSES_BY_TYPE.get(self.type, Transaction)
@@ -261,7 +260,7 @@ class GoogleSheetOperationDraft:
 
 
 class GoogleSheetCashFlowDraft:
-    def __init__(self, row_data):
+    def __init__(self, row_data, user):
         self.number = row_data.get('Num') or 0
         self.date_string = row_data['Fecha']
         self.type = row_data['Tipo']
@@ -269,6 +268,7 @@ class GoogleSheetCashFlowDraft:
         self.account_name = row_data['Cuenta']
         self.financial_instrument_code = row_data['Moneda']
         self.quantity = abs(as_float(row_data['Nominales']))
+        self.user = user
 
     def create(self):
         kwargs = {
@@ -308,10 +308,7 @@ class GoogleSheetCashFlowDraft:
         return FinancialInstrument.objects.get(code=self.financial_instrument_code)
 
     def account(self):
-        accounts_by_name = InvestmentIndividualAccount.objects.filter(description=self.account_name)
-        if len(accounts_by_name) == 0:
-            InvestmentIndividualAccount.objects.create(description=self.account_name)
-        return InvestmentIndividualAccount.objects.get(description=self.account_name)
+        return get_or_create_account(self.account_name, self.user)
 
     def operation_class(self):
         return OPERATION_CLASSES_BY_TYPE.get(self.type, Transaction)
@@ -328,3 +325,13 @@ class GoogleSheetCashFlowDraft:
             self.as_hidden_input(self.account().pk, 'account'),
         ]
         return SafeString('\n'.join(inputs))
+
+
+def get_or_create_account(account_name, user):
+    accounts_by_name = InvestmentIndividualAccount.objects.filter(description=account_name)
+    if accounts_by_name:
+        return accounts_by_name[0]
+    else:
+        account = InvestmentIndividualAccount.objects.create(description=account_name)
+        account.authorized_users.add(user)
+        return account

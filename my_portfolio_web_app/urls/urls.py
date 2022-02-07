@@ -76,17 +76,20 @@ urlpatterns = [
     path('accounts/add/account/', InvestmentAccountCreateView.as_view(
         model=InvestmentIndividualAccount, fields=['description', 'authorized_users']), name='account_create'),
     path('accounts/add/portfolio/',
-         InvestmentAccountCreateView.as_view(model=InvestmentPortfolio, fields=['description', 'individual_accounts']),
+         InvestmentAccountCreateView.as_view(model=InvestmentPortfolio,
+                                             fields=['description', 'individual_accounts', 'authorized_users']),
          name='portfolio_create'),
     path('accounts/edit/account/<int:pk>/', InvestmentAccountUpdateView.as_view(
         model=InvestmentIndividualAccount, fields=['description', 'authorized_users']), name='account_update'),
     path('accounts/edit/portfolio/<int:pk>/',
-         InvestmentAccountUpdateView.as_view(model=InvestmentPortfolio, fields=['description', 'individual_accounts']),
+         InvestmentAccountUpdateView.as_view(model=InvestmentPortfolio,
+                                             fields=['description', 'individual_accounts', 'authorized_users']),
          name='portfolio_update'),
     path('accounts/delete/account/<int:pk>/', InvestmentAccountDeleteView.as_view(
         model=InvestmentIndividualAccount, fields=['description', 'authorized_users']), name='account_delete'),
     path('accounts/delete/portfolio/<int:pk>/',
-         InvestmentAccountDeleteView.as_view(model=InvestmentPortfolio, fields=['description', 'individual_accounts']),
+         InvestmentAccountDeleteView.as_view(model=InvestmentPortfolio,
+                                             fields=['description', 'individual_accounts', 'authorized_users']),
          name='portfolio_delete'),
     path('stocks/', StockView.as_view(), name='stock_view'),
     path('import/IOL/', ImportIOLOperationsView.as_view(), name='import_iol_operations_view'),
