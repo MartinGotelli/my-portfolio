@@ -40,9 +40,14 @@ class IOLAPI:
         return response.status_code in [requests.codes.service_unavailable, requests.codes.unauthorized]
 
     def set_user_and_password(self, request_user):
-        user_configuration = UserIntegrationConfiguration.objects.get(user=request_user)  # TODO: Error handling
-        self.user = user_configuration.iol_username
-        self.password = user_configuration.iol_password
+        try:
+            user_configuration = UserIntegrationConfiguration.objects.get(user=request_user)
+            self.user = user_configuration.iol_username
+            self.password = user_configuration.iol_password
+        except UserIntegrationConfiguration.DoesNotExist:
+            self.user = ''
+            self.password = ''
+
 
     def requests(self):
         if not self.user or not self.password:

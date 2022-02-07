@@ -57,17 +57,17 @@ class Separator:
         return '<div class="dropdown-divider"></div>'
 
 
-def account_sub_items(view_name):
+def account_sub_items(view_name, user):
     return [
         MenuItem(view_name, account.description, arguments={'pk': account.pk}) for account in
-        InvestmentIndividualAccount.objects.all()
+        InvestmentIndividualAccount.by_user(user)
     ]
 
 
-def portfolio_sub_items(view_name):
+def portfolio_sub_items(view_name, user):
     return [
         MenuItem(view_name, portfolio.description, arguments={'pk': portfolio.pk}) for portfolio in
-        InvestmentPortfolio.objects.all()
+        InvestmentPortfolio.by_user(user)
     ]
 
 
@@ -86,12 +86,12 @@ def menu_items(request):
                 MenuItem('portfolio_create', 'Agregar Portfolio'),
             ]),
             NonClickableMenu('Resultados',
-                             menu_items=account_sub_items('account_performance_view') +
+                             menu_items=account_sub_items('account_performance_view', request.user) +
                                         separator +
-                                        portfolio_sub_items('portfolio_performance_view')
+                                        portfolio_sub_items('portfolio_performance_view', request.user)
                              ),
             ClickableMenu('all_transactions_list', 'Transacciones',
-                          menu_items=account_sub_items('transactions_list') + separator + [
+                          menu_items=account_sub_items('transactions_list', request.user) + separator + [
                               MenuItem('transaction_create', 'Agregar')]),
             MenuItem('stock_view', 'Partidas'),
             NonClickableMenu('Importar', menu_items=[

@@ -29,6 +29,7 @@ def clear_all_transactions(request, account_pk: int):
 class TransactionsListView(ListView, LoginRequiredView):
     template_name = 'my_portfolio/transaction_list.html'
     context_object_name = 'transaction_list'
+    __accounts = None
 
     def account(self):
         pk = self.kwargs.get('pk')
@@ -42,7 +43,19 @@ class TransactionsListView(ListView, LoginRequiredView):
 
     def filter(self, transactions):
         return [transaction for transaction in transactions if
-                not self.type() or transaction.type == self.type()]
+                self.type_condition_for(transaction)
+                and self.account_condition_for(transaction)]
+
+    def type_condition_for(self, transaction):
+        return not self.type() or transaction.type == self.type()
+
+    def account_condition_for(self, transaction):
+        return transaction.account in self.accounts()
+
+    def accounts(self):
+        if not self.__accounts:
+            self.__accounts = InvestmentIndividualAccount.by_user(self.request.user)
+        return self.__accounts
 
     def get_queryset(self):
         if not self.account():

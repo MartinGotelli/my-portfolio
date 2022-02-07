@@ -51,7 +51,12 @@ class GoogleSheetAPI:
 
     def __init__(self, request):
         self.user = request.user
-        self.sheet_id = UserIntegrationConfiguration.objects.get(user=self.user).google_sheet_id
+
+        try:
+            self.sheet_id = UserIntegrationConfiguration.objects.get(user=self.user).google_sheet_id
+        except UserIntegrationConfiguration.DoesNotExist:
+            self.sheet_id = '1gmEHxkISBwkbGHWfd4M2x-P910kQNy2kajGegIp9kmw'
+
         self.credentials = Credentials.from_authorized_user_info(request.session.get('google_credentials'))
 
     def get_values_from_sheet(self, range):
