@@ -45,15 +45,15 @@ class InvestmentAccountListView(ListView, LoginRequiredView):
 
 class InvestmentAccountCreateView(MyPortfolioCreateView):
     template_name = 'my_portfolio/account_create_form.html'
-    success_url = reverse_lazy('investment_account_list')
+    success_url = reverse_lazy('my-portfolio:investment_account_list')
 
 
 class InvestmentAccountUpdateView(MyPortfolioUpdateView):
-    success_url = reverse_lazy('investment_account_list')
+    success_url = reverse_lazy('my-portfolio:investment_account_list')
 
 
 class InvestmentAccountDeleteView(MyPortfolioDeleteView):
-    success_url = reverse_lazy('investment_account_list')
+    success_url = reverse_lazy('my-portfolio:investment_account_list')
 
 
 class AccountPerformanceView(GoogleCredentialsRequiredView, ListView, LoginRequiredView):
