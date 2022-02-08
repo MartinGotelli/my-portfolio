@@ -29,6 +29,12 @@ class ImportIOLOperationsView(ListView, LoginRequiredView):
 
             return operations
 
+    def post(self, request, *args, **kwargs):
+        operations = self.get_queryset()
+        for operation in operations:
+            operation.create()
+        return HttpResponseRedirect(reverse('my-portfolio:all_transactions_list'))
+
 
 class ImportGoogleSheetOperationsView(GoogleCredentialsRequiredView, ListView, LoginRequiredView):
     template_name = 'my_portfolio/import_sheet_operations.html'
@@ -47,7 +53,8 @@ class ImportGoogleSheetOperationsView(GoogleCredentialsRequiredView, ListView, L
         if (not self.from_date() or not self.to_date()) and not self.without_filter():
             return []
         else:
-            operations = GoogleSheetAPI(self.request).operations_from_to(self.from_date(), self.to_date(), self.without_filter())
+            operations = GoogleSheetAPI(self.request).operations_from_to(self.from_date(), self.to_date(),
+                                                                         self.without_filter())
             # operations.sort(key=lambda draft: draft.date())
 
             return operations
@@ -76,7 +83,8 @@ class ImportGoogleSheetCashFlowsView(GoogleCredentialsRequiredView, ListView, Lo
         if (not self.from_date() or not self.to_date()) and not self.without_filter():
             return []
         else:
-            operations = GoogleSheetAPI(self.request).cash_flows_from_to(self.from_date(), self.to_date(), self.without_filter())
+            operations = GoogleSheetAPI(self.request).cash_flows_from_to(self.from_date(), self.to_date(),
+                                                                         self.without_filter())
 
             return operations
 

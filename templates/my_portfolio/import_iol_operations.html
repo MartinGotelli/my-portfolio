@@ -24,28 +24,30 @@
                 <th class="th">Cantidad</th>
                 <th class="th">Precio</th>
                 <th class="th">Monto</th>
+                <th class="th">Comisiones $</th>
                 <th class="th">Acciones</th>
             </tr>
+            <form action="" method="POST">
+                {% csrf_token %}
+                <div style="text-align: center">
+                    <button class="primary" type="submit">Agregar Todas</button>
+                </div>
+            </form>
             {% for operation in draft_operations %}
                 <tr>
-                    <td class="td">{{ operation.date_string }}</td>
+                    <td class="td">{{ operation.date | date:"d-m-y" }}</td>
                     <td class="td">{{ operation.number }}</td>
                     <td class="td">{{ operation.type }}</td>
                     <td class="td">{{ operation.financial_instrument_code }}</td>
-                    <td class="num">{{ operation.quantity }}</td>
+                    <td class="num">{{ operation.security_quantity }}</td>
                     <td class="num">{{ operation.price }}</td>
                     <td class="num">{{ operation.gross_payment }}</td>
+                    <td class="num">{{ operation.ars_commissions }}</td>
                     <td class="td">
-                        <form method="POST"
+                        <form target="_blank" method="POST"
                               action="{% url 'my-portfolio:'|add:operation.operation_class.class_name|add:'_create' %}">
                             {% csrf_token %}
-                            <input type="hidden" name="broker" value="IOL">
-                            <input type="hidden" name="date" value="{{ operation.date|date:"Y-m-d" }}">
-                            <input type="hidden" name="security_quantity" value="{{ operation.quantity }}">
-                            <input type="hidden" name="financial_instrument"
-                                   value="{{ operation.financial_instrument.pk }}">
-                            <input type="hidden" name="price_amount" value="{{ operation.price.quantity }}">
-                            <input type="hidden" name="price_unit" value="{{ operation.price.unit.pk }}">
+                            {{ operation.as_hidden }}
                             <a onclick="this.parentNode.submit();">Crear Operación</a>
                         </form>
                     </td>

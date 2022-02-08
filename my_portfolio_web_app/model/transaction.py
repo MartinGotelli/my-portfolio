@@ -1,3 +1,4 @@
+import datetime
 from abc import abstractmethod
 
 from django.db.models import (
@@ -48,7 +49,7 @@ def amount_for_in(currency, measurement_or_bag):
 
 
 class Transaction(MyPortfolioPolymorphicModel):
-    date = CalendarDateField('Fecha')
+    date = CalendarDateField('Fecha', default=datetime.date.today)
     security_quantity = DecimalField(verbose_name='Cantidad Nominal', decimal_places=2, max_digits=20)
     financial_instrument = ForeignKey(FinancialInstrument, verbose_name='Instrumento', on_delete=PROTECT)
     broker = CharField(max_length=10, choices=BROKERS)
