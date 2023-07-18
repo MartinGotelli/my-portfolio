@@ -41,7 +41,7 @@ class ClosingPosition:
     def __eq__(self, other):
         return isinstance(other,
                           ClosingPosition) and self.outflow == other.outflow and self.security_quantity == \
-               other.security_quantity
+            other.security_quantity
 
     def date(self):
         return self.outflow.date
@@ -85,7 +85,7 @@ class OpenPosition:
     def __eq__(self, other):
         return isinstance(other,
                           OpenPosition) and self.inflow == other.inflow and self.closing_positions == \
-               other.closing_positions
+            other.closing_positions
 
     def date(self):
         return self.inflow.date
@@ -321,9 +321,14 @@ class StockSystem:
 
     def position_payments_result(self, open_position, currency, date):
         payments = self.payments.setdefault(open_position.financial_instrument(), [])
-        return float(sum([convert_to(payment.monetary_movements(), currency, date) * float(open_position.balance_on(
-            payment.date)) / float(self.current_position_for_on(open_position.financial_instrument(), payment.date)) for
-                          payment in payments if payment.date <= date]))
+        return float(sum([self.position_result_for(open_position, currency, date,payment) for payment in payments if payment.date <= date]))
+
+    def position_result_for(self, open_position, currency, date, payment):
+        current_position = float(self.current_position_for_on(open_position.financial_instrument(), payment.date))
+        if current_position == 0:
+            return 0
+        return convert_to(payment.monetary_movements(), currency, date) * float(
+            open_position.balance_on(payment.date)) / current_position
 
     def price_difference_result_for_on_using(self, financial_instrument, currency, date, valuation_system):
         open_positions = self.open_positions.setdefault(financial_instrument, [])
@@ -348,7 +353,8 @@ class StockSystem:
                                                                   total_position) for
                     open_position in open_positions])
 
-    def position_weighted_performance_percentage(self, open_position, currency, date, valuation_system, total_position):
+    def position_weighted_performance_percentage(self, open_position, currency, date, valuation_system,
+                                                 total_position):
         if isinstance(open_position, MonetaryOpenPosition):
             # TODO: CAMBIAR
             return 0
@@ -525,7 +531,8 @@ class InvestmentPerformanceCalculator:
         return self.round_and_convert_to(self.stock_system().position_sales_result(open_position, self.date))
 
     def commissions_result_for(self, financial_instrument):
-        return self.round_and_convert_to(self.stock_system().commissions_result_for_on(financial_instrument, self.date))
+        return self.round_and_convert_to(
+            self.stock_system().commissions_result_for_on(financial_instrument, self.date))
 
     def position_commissions_result(self, open_position):
         return self.round_and_convert_to(self.stock_system().position_commissions_result(open_position, self.date))
